@@ -58,10 +58,16 @@ function calculatePosition(
 export function createSnapWindow(capture: CaptureResult): BrowserWindow {
   const { width, height } = getImageDimensions(capture.filePath);
 
-  // Cap the window size to something reasonable
+  // screencapture on Retina gives 2x pixel dimensions — convert to points
+  const display = screen.getDisplayNearestPoint({
+    x: capture.cursorX,
+    y: capture.cursorY,
+  });
+  const scaleFactor = display.scaleFactor || 1;
+
   const maxDim = 800;
-  let winWidth = width;
-  let winHeight = height;
+  let winWidth = Math.round(width / scaleFactor);
+  let winHeight = Math.round(height / scaleFactor);
   if (winWidth > maxDim || winHeight > maxDim) {
     const scale = maxDim / Math.max(winWidth, winHeight);
     winWidth = Math.round(winWidth * scale);
