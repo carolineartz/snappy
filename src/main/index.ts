@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import {
   app,
@@ -90,12 +91,17 @@ function createMenubar() {
   ipcMain.on(EVENTS.APP_QUIT, () => app.quit());
   ipcMain.on(EVENTS.WINDOW_HIDE, () => mb.hideWindow());
 
-  // Snap close — the sender is the snap window's webContents
+  // Snap IPC
   ipcMain.on(EVENTS.SNAP_CLOSE, (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
       closeSnapWindow(win.id);
     }
+  });
+
+  ipcMain.handle(EVENTS.SNAP_READ_IMAGE, (_event, filePath: string) => {
+    const buffer = fs.readFileSync(filePath);
+    return `data:image/png;base64,${buffer.toString('base64')}`;
   });
 }
 

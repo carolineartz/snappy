@@ -9,6 +9,8 @@ const snappyAPI = {
   },
   snap: {
     close: () => ipcRenderer.send(EVENTS.SNAP_CLOSE),
+    readImage: (filePath: string) =>
+      ipcRenderer.invoke(EVENTS.SNAP_READ_IMAGE, filePath) as Promise<string>,
   },
 };
 

@@ -1,6 +1,15 @@
+import { useEffect, useState } from 'react';
+
 export function SnapViewer() {
-  const params = new URLSearchParams(window.location.search);
-  const imgSrc = params.get('img');
+  const [imgSrc, setImgSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const filePath = params.get('filePath');
+    if (filePath) {
+      window.snappy.snap.readImage(filePath).then(setImgSrc);
+    }
+  }, []);
 
   const handleDoubleClick = () => {
     window.snappy.snap.close();

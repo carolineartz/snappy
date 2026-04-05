@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import path from 'node:path';
 import { BrowserWindow, nativeImage, screen } from 'electron';
 import log from 'electron-log';
@@ -54,15 +53,6 @@ function calculatePosition(
 }
 
 /**
- * Read an image file and return as a base64 data URI.
- */
-function imageToDataURI(filePath: string): string {
-  const buffer = fs.readFileSync(filePath);
-  const base64 = buffer.toString('base64');
-  return `data:image/png;base64,${base64}`;
-}
-
-/**
  * Creates a new floating snap window displaying the captured screenshot.
  */
 export function createSnapWindow(capture: CaptureResult): BrowserWindow {
@@ -105,13 +95,8 @@ export function createSnapWindow(capture: CaptureResult): BrowserWindow {
 
   win.setAspectRatio(winWidth / winHeight);
 
-  // Encode image as data URI and pass via query param to avoid
-  // file:// security issues and IPC timing races
-  const dataURI = imageToDataURI(capture.filePath);
-  const params = new URLSearchParams({
-    img: dataURI,
-    filePath: capture.filePath,
-  });
+  // Pass file path as query param — renderer uses IPC to read the image data
+  const params = new URLSearchParams({ filePath: capture.filePath });
 
   if (isDev && process.env.VITE_DEV_SERVER_URL) {
     win.loadURL(`${process.env.VITE_DEV_SERVER_URL}snap/index.html?${params}`);
