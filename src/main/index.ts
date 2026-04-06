@@ -101,9 +101,9 @@ function createMenubar() {
 
   ipcMain.on(EVENTS.SNAP_MOVE, (event, dx: number, dy: number) => {
     const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) {
+    if (win && !win.isDestroyed()) {
       const [x, y] = win.getPosition();
-      win.setPosition(x + dx, y + dy);
+      win.setPosition(Math.round(x + dx), Math.round(y + dy));
     }
   });
 

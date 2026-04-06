@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 export function SnapViewer() {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const isDragging = useRef(false);
+  const isClosing = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -14,7 +15,7 @@ export function SnapViewer() {
   }, []);
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || isClosing.current) return;
     isDragging.current = true;
     dragStart.current = { x: e.screenX, y: e.screenY };
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
@@ -34,6 +35,8 @@ export function SnapViewer() {
   };
 
   const handleDoubleClick = () => {
+    isClosing.current = true;
+    isDragging.current = false;
     window.snappy.snap.close();
   };
 
