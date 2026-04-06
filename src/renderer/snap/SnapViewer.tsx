@@ -22,6 +22,10 @@ export function SnapViewer() {
       if (e.metaKey && e.key === 'c' && filePath.current) {
         window.snappy.snap.copy(filePath.current);
       }
+      if (e.metaKey && e.key === 'p') {
+        e.preventDefault();
+        window.snappy.snap.toggleShadow();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);

@@ -115,6 +115,13 @@ function createMenubar() {
     }
   });
 
+  ipcMain.on(EVENTS.SNAP_TOGGLE_SHADOW, (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win && !win.isDestroyed()) {
+      win.setHasShadow(!win.hasShadow());
+    }
+  });
+
   ipcMain.on(EVENTS.SNAP_COPY, (_event, filePath: string) => {
     const image = nativeImage.createFromPath(filePath);
     if (!image.isEmpty()) {

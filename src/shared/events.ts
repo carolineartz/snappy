@@ -15,5 +15,6 @@ export const EVENTS = {
   SNAP_MOVE: 'snappy:snap-move',
   SNAP_SET_OPACITY: 'snappy:snap-set-opacity',
   SNAP_COPY: 'snappy:snap-copy',
+  SNAP_TOGGLE_SHADOW: 'snappy:snap-toggle-shadow',
   SNAP_READ_IMAGE: 'snappy:snap-read-image',
 } as const;

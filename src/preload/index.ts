@@ -14,6 +14,7 @@ const snappyAPI = {
     setOpacity: (opacity: number) =>
       ipcRenderer.send(EVENTS.SNAP_SET_OPACITY, opacity),
     copy: (filePath: string) => ipcRenderer.send(EVENTS.SNAP_COPY, filePath),
+    toggleShadow: () => ipcRenderer.send(EVENTS.SNAP_TOGGLE_SHADOW),
     readImage: (filePath: string) =>
       ipcRenderer.invoke(EVENTS.SNAP_READ_IMAGE, filePath) as Promise<string>,
   },
