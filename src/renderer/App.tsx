@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { SnapList } from './components/SnapList';
-
-interface SnapItem {
-  id: string;
-  thumbPath: string;
-  sourceApp: string | null;
-  isOpen: number;
-  createdAt: string;
-}
+import { SnapGrid } from './components/SnapGrid';
+import type { SnapItem } from './types';
 
 export function App() {
   const [snaps, setSnaps] = useState<SnapItem[]>([]);
@@ -34,9 +27,9 @@ export function App() {
 
   return (
     <div className="flex h-screen flex-col bg-neutral-900 text-white">
-      <header className="flex items-center justify-between border-b border-neutral-700 px-4 py-3">
-        <h1 className="text-lg font-semibold">Snappy</h1>
-        <span className="text-xs text-neutral-400">
+      <header className="flex items-center justify-between border-b border-neutral-700 px-4 py-2">
+        <h1 className="text-sm font-semibold">Snappy</h1>
+        <span className="text-xs text-neutral-500">
           {snaps.length} snap{snaps.length !== 1 ? 's' : ''}
         </span>
       </header>
@@ -52,7 +45,7 @@ export function App() {
             </div>
           </div>
         ) : (
-          <SnapList snaps={snaps} onOpen={handleOpen} onDelete={handleDelete} />
+          <SnapGrid snaps={snaps} onOpen={handleOpen} onDelete={handleDelete} />
         )}
       </main>
     </div>
