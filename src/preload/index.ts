@@ -11,6 +11,8 @@ const snappyAPI = {
     close: () => ipcRenderer.send(EVENTS.SNAP_CLOSE),
     move: (dx: number, dy: number) =>
       ipcRenderer.send(EVENTS.SNAP_MOVE, dx, dy),
+    setOpacity: (opacity: number) =>
+      ipcRenderer.send(EVENTS.SNAP_SET_OPACITY, opacity),
     readImage: (filePath: string) =>
       ipcRenderer.invoke(EVENTS.SNAP_READ_IMAGE, filePath) as Promise<string>,
   },

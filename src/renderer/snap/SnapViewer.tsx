@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 export function SnapViewer() {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
+  const opacity = useRef(1);
   const isDragging = useRef(false);
   const isClosing = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
@@ -34,6 +35,13 @@ export function SnapViewer() {
     (e.target as HTMLElement).releasePointerCapture(e.pointerId);
   };
 
+  const handleWheel = (e: React.WheelEvent) => {
+    // Scroll down = more transparent, scroll up = more opaque
+    const delta = e.deltaY > 0 ? -0.05 : 0.05;
+    opacity.current = Math.max(0.05, Math.min(1, opacity.current + delta));
+    window.snappy.snap.setOpacity(opacity.current);
+  };
+
   const handleDoubleClick = () => {
     isClosing.current = true;
     isDragging.current = false;
@@ -48,6 +56,7 @@ export function SnapViewer() {
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onDoubleClick={handleDoubleClick}
+      onWheel={handleWheel}
     >
       {imgSrc && (
         <img

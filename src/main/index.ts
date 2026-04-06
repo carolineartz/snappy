@@ -107,6 +107,13 @@ function createMenubar() {
     }
   });
 
+  ipcMain.on(EVENTS.SNAP_SET_OPACITY, (event, opacity: number) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win && !win.isDestroyed()) {
+      win.setOpacity(Math.max(0.05, Math.min(1, opacity)));
+    }
+  });
+
   ipcMain.handle(EVENTS.SNAP_READ_IMAGE, (_event, filePath: string) => {
     const buffer = fs.readFileSync(filePath);
     return `data:image/png;base64,${buffer.toString('base64')}`;
