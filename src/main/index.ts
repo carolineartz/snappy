@@ -102,24 +102,12 @@ function createMenubar() {
     if (isDev) {
       mb.window?.webContents.openDevTools({ mode: 'detach' });
     }
-
-    // Cancel pending hide when tray window regains focus
-    mb.window?.on('focus', () => {
-      if (trayHideTimeout) {
-        clearTimeout(trayHideTimeout);
-        trayHideTimeout = null;
-      }
-    });
   });
 
   // Custom tray hide logic:
-  // - Clicking outside the app hides immediately
-  // - Opening a snap from tray does NOT hide (managed by renderer)
-  // - The menubar lib's auto-hide is disabled via alwaysOnTop
-  let trayHideTimeout: ReturnType<typeof setTimeout> | null = null;
-
+  // - Interacting with snaps never hides the tray
+  // - Only hides when focus goes to a non-app window
   mb.on('focus-lost', () => {
-    // Check if focus went to one of our snap windows
     const focusedWin = BrowserWindow.getFocusedWindow();
     const isSnapWindow =
       focusedWin &&
@@ -127,27 +115,12 @@ function createMenubar() {
         (entry) => entry.win.id === focusedWin.id,
       );
 
-    if (isSnapWindow) {
-      // Focus went to a snap — hide after delay so user can come back
-      trayHideTimeout = setTimeout(() => {
-        const current = BrowserWindow.getFocusedWindow();
-        if (!current || current.id !== mb.window?.id) {
-          mb.hideWindow();
-        }
-        trayHideTimeout = null;
-      }, 1500);
-    } else {
-      // Focus went to a non-app window — hide immediately
+    if (!isSnapWindow) {
       mb.hideWindow();
     }
   });
 
-  // Cancel pending hide if tray regains focus
   mb.on('after-show', () => {
-    if (trayHideTimeout) {
-      clearTimeout(trayHideTimeout);
-      trayHideTimeout = null;
-    }
     mb.window?.webContents.send(EVENTS.SNAPS_UPDATED);
   });
 
