@@ -43,7 +43,7 @@ export function SnapViewer() {
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: snap window with manual drag
     <div
-      className="h-screen w-screen cursor-grab select-none overflow-hidden active:cursor-grabbing"
+      className="h-screen w-screen select-none overflow-hidden"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
