@@ -58,6 +58,13 @@ export function SnapViewer() {
     window.snappy.snap.setOpacity(opacity.current);
   };
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (filePath.current) {
+      window.snappy.snap.showContextMenu(filePath.current);
+    }
+  };
+
   const handleDoubleClick = () => {
     isClosing.current = true;
     isDragging.current = false;
@@ -72,6 +79,7 @@ export function SnapViewer() {
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onDoubleClick={handleDoubleClick}
+      onContextMenu={handleContextMenu}
       onWheel={handleWheel}
     >
       {imgSrc && (

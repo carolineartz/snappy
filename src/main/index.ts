@@ -6,6 +6,7 @@ import {
   clipboard,
   globalShortcut,
   ipcMain,
+  Menu,
   nativeImage,
 } from 'electron';
 import log from 'electron-log';
@@ -120,6 +121,43 @@ function createMenubar() {
     if (win && !win.isDestroyed()) {
       win.setHasShadow(!win.hasShadow());
     }
+  });
+
+  ipcMain.on(EVENTS.SNAP_CONTEXT_MENU, (event, filePath: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win || win.isDestroyed()) return;
+
+    const hasShadow = win.hasShadow();
+    const menu = Menu.buildFromTemplate([
+      {
+        label: 'Copy Image',
+        accelerator: 'CmdOrCtrl+C',
+        click: () => {
+          const image = nativeImage.createFromPath(filePath);
+          if (!image.isEmpty()) {
+            clipboard.writeImage(image);
+          }
+        },
+      },
+      { type: 'separator' },
+      {
+        label: 'Pixel Perfect Mode',
+        type: 'checkbox',
+        checked: !hasShadow,
+        click: () => {
+          win.setHasShadow(!hasShadow);
+        },
+      },
+      { type: 'separator' },
+      {
+        label: 'Close',
+        click: () => {
+          closeSnapWindow(win.id);
+        },
+      },
+    ]);
+
+    menu.popup({ window: win });
   });
 
   ipcMain.on(EVENTS.SNAP_COPY, (_event, filePath: string) => {
