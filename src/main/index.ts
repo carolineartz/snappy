@@ -38,6 +38,22 @@ import {
   setOnSnapWindowClosed,
 } from './snap-window';
 
+// Guard against EIO/EPIPE errors on stdout/stderr — happens when the
+// parent TTY goes away (packaged app, detached spawns, etc.). Without
+// these listeners, a single console.log during startup can crash the
+// main process.
+const STREAM_ERROR_CODES = new Set(['EIO', 'EPIPE', 'EBADF']);
+process.stdout.on('error', (err: NodeJS.ErrnoException) => {
+  if (!STREAM_ERROR_CODES.has(err.code ?? '')) throw err;
+});
+process.stderr.on('error', (err: NodeJS.ErrnoException) => {
+  if (!STREAM_ERROR_CODES.has(err.code ?? '')) throw err;
+});
+
+// Disable console transport in packaged builds — file transport still works
+if (app.isPackaged) {
+  log.transports.console.level = false;
+}
 log.initialize();
 
 const isDev = !!process.env.VITE_DEV_SERVER_URL;
