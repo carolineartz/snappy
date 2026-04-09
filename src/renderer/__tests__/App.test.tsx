@@ -31,11 +31,15 @@ describe('App', () => {
   it('shows empty state when no snaps', async () => {
     render(<App />);
     expect(await screen.findByText('No snaps yet')).toBeInTheDocument();
-    expect(screen.getByText('Press ⌘⇧2 to take a screenshot')).toBeInTheDocument();
+    expect(
+      screen.getByText('Press ⌘⇧2 to take a screenshot'),
+    ).toBeInTheDocument();
   });
 
   it('shows snap count as singular when 1 snap', async () => {
-    vi.mocked(window.snappy.library.getSnaps).mockResolvedValueOnce([makeSnap()]);
+    vi.mocked(window.snappy.library.getSnaps).mockResolvedValueOnce([
+      makeSnap(),
+    ]);
     render(<App />);
     expect(await screen.findByText('1 snap')).toBeInTheDocument();
   });
@@ -50,7 +54,9 @@ describe('App', () => {
   });
 
   it('renders the snap grid when snaps exist', async () => {
-    vi.mocked(window.snappy.library.getSnaps).mockResolvedValueOnce([makeSnap()]);
+    vi.mocked(window.snappy.library.getSnaps).mockResolvedValueOnce([
+      makeSnap(),
+    ]);
     render(<App />);
     await waitFor(() => {
       expect(screen.queryByText('No snaps yet')).not.toBeInTheDocument();

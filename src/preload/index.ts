@@ -1,5 +1,30 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import type { AnnotationTool } from '../shared/annotation-types';
 import { EVENTS } from '../shared/events';
+
+interface MenuOpenParams {
+  screenX: number;
+  screenY: number;
+  activeTool: AnnotationTool;
+  activeColor: string;
+  activeStrokeWidth: number;
+  hasShadow: boolean;
+  hasAnnotations: boolean;
+}
+
+interface MenuActionPayload {
+  type:
+    | 'setTool'
+    | 'setColor'
+    | 'setStroke'
+    | 'copy'
+    | 'toggleShadow'
+    | 'close'
+    | 'delete'
+    | 'duplicate'
+    | 'revert';
+  value?: unknown;
+}
 
 const snappyAPI = {
   app: {
@@ -31,6 +56,20 @@ const snappyAPI = {
       ipcRenderer.invoke(EVENTS.SNAP_DUPLICATE, snapId),
     regenerateThumbnail: (snapId: string, dataUrl: string) =>
       ipcRenderer.invoke(EVENTS.SNAP_REGENERATE_THUMBNAIL, snapId, dataUrl),
+
+    // Context menu popup
+    openMenu: (params: MenuOpenParams) =>
+      ipcRenderer.send(EVENTS.MENU_OPEN, params),
+    onMenuAction: (callback: (payload: MenuActionPayload) => void) => {
+      ipcRenderer.on(EVENTS.MENU_ACTION, (_e, payload: MenuActionPayload) =>
+        callback(payload),
+      );
+    },
+  },
+  menu: {
+    dismiss: () => ipcRenderer.send(EVENTS.MENU_DISMISS),
+    action: (type: MenuActionPayload['type'], value?: unknown) =>
+      ipcRenderer.send(EVENTS.MENU_ACTION, { type, value }),
   },
   library: {
     getSnaps: () => ipcRenderer.invoke(EVENTS.LIBRARY_GET_SNAPS),

@@ -58,6 +58,7 @@ export default defineConfig({
       input: {
         main: path.resolve(root, 'index.html'),
         snap: path.resolve(root, 'snap/index.html'),
+        menu: path.resolve(root, 'menu/index.html'),
       },
     },
   },

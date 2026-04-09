@@ -27,6 +27,12 @@ export const EVENTS = {
   // Snap management
   SNAP_DUPLICATE: 'snappy:snap-duplicate',
 
+  // Context menu popup window
+  MENU_OPEN: 'snappy:menu-open',
+  MENU_DISMISS: 'snappy:menu-dismiss',
+  MENU_ACTION: 'snappy:menu-action',
+  MENU_STATE_UPDATE: 'snappy:menu-state-update',
+
   // Library
   LIBRARY_GET_SNAPS: 'snappy:library-get-snaps',
   LIBRARY_OPEN_SNAP: 'snappy:library-open-snap',

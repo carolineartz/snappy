@@ -188,6 +188,7 @@ export function ContextMenu({
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: context menu overlay
+    // biome-ignore lint/a11y/useKeyWithClickEvents: dismiss backdrop, not keyboard interactive
     <div
       className="fixed inset-0 z-50"
       onClick={onDismiss}
@@ -197,6 +198,7 @@ export function ContextMenu({
       }}
     >
       {/* biome-ignore lint/a11y/noStaticElementInteractions: menu panel */}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation, not interactive */}
       <div
         className="absolute min-w-[200px] rounded-lg border border-neutral-200 bg-white/95 py-1 shadow-xl backdrop-blur-md"
         style={{ left: x, top: y }}
@@ -211,7 +213,10 @@ export function ContextMenu({
               icon={icon}
               label={label}
               isActive={activeTool === tool}
-              onClick={() => onSetTool(tool)}
+              onClick={() => {
+                onSetTool(tool);
+                onDismiss();
+              }}
             />
           ))}
         </div>

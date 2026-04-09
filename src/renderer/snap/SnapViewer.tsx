@@ -3,17 +3,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Annotation, TextAnnotation } from '../../shared/annotation-types';
 import { DEFAULT_FONT_SIZE } from '../../shared/annotation-types';
 import { AnnotationLayer } from './AnnotationLayer';
-import { ContextMenu } from './ContextMenu';
 import { useAnnotations } from './useAnnotations';
 
 export function SnapViewer() {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [hasShadow, setHasShadow] = useState(true);
-  const [contextMenu, setContextMenu] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const isDragging = useRef(false);
@@ -209,14 +204,46 @@ export function SnapViewer() {
     ann.clearAll();
   }, [ann]);
 
+  // Listen for actions from the context menu popup window
+  useEffect(() => {
+    window.snappy.snap.onMenuAction((payload) => {
+      switch (payload.type) {
+        case 'setTool':
+          ann.setTool(payload.value as typeof ann.activeTool);
+          break;
+        case 'setColor':
+          ann.setColor(payload.value as string);
+          break;
+        case 'setStroke':
+          ann.setStrokeWidth(payload.value as number);
+          break;
+        case 'copy':
+          copySnapToClipboard();
+          break;
+        case 'toggleShadow':
+          handleToggleShadow();
+          break;
+        case 'close':
+          handleClose();
+          break;
+        case 'delete':
+          handleDelete();
+          break;
+        case 'duplicate':
+          handleDuplicate();
+          break;
+        case 'revert':
+          handleRevert();
+          break;
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (contextMenu) {
-          setContextMenu(null);
-          return;
-        }
         if (textEditing) {
           setTextEditing(null);
         }
@@ -242,7 +269,6 @@ export function SnapViewer() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
     textEditing,
-    contextMenu,
     resetToPointer,
     copySnapToClipboard,
     handleToggleShadow,
@@ -278,7 +304,15 @@ export function SnapViewer() {
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
-    setContextMenu({ x: e.clientX, y: e.clientY });
+    window.snappy.snap.openMenu({
+      screenX: e.screenX,
+      screenY: e.screenY,
+      activeTool: ann.activeTool,
+      activeColor: ann.activeColor,
+      activeStrokeWidth: ann.activeStrokeWidth,
+      hasShadow,
+      hasAnnotations: ann.annotations.length > 0,
+    });
   };
 
   const handleDoubleClick = () => {
@@ -350,29 +384,6 @@ export function SnapViewer() {
               setTextEditing(null);
             }
           }}
-        />
-      )}
-
-      {/* Custom context menu */}
-      {contextMenu && (
-        <ContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          activeTool={ann.activeTool}
-          activeColor={ann.activeColor}
-          activeStrokeWidth={ann.activeStrokeWidth}
-          hasShadow={hasShadow}
-          hasAnnotations={ann.annotations.length > 0}
-          onSetTool={ann.setTool}
-          onSetColor={ann.setColor}
-          onSetStroke={ann.setStrokeWidth}
-          onCopy={copySnapToClipboard}
-          onToggleShadow={handleToggleShadow}
-          onClose={handleClose}
-          onDelete={handleDelete}
-          onDuplicate={handleDuplicate}
-          onRevert={handleRevert}
-          onDismiss={() => setContextMenu(null)}
         />
       )}
     </div>

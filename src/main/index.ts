@@ -25,6 +25,12 @@ import {
   updateSnap,
 } from './database';
 import {
+  closeMenuWindow,
+  getMenuWindow,
+  getParentSnapWindowId,
+  openMenuWindow,
+} from './menu-window';
+import {
   closeSnapWindow,
   createSnapWindow,
   getSnapWindows,
@@ -118,6 +124,7 @@ function createMenubar() {
   function isSnappyWindow(win: BrowserWindow | null): boolean {
     if (!win) return false;
     if (win.id === mb.window?.id) return true;
+    if (win.id === getMenuWindow()?.id) return true;
     return Array.from(getSnapWindows().values()).some(
       (entry) => entry.win.id === win.id,
     );
@@ -197,6 +204,40 @@ function createMenubar() {
   ipcMain.handle(EVENTS.SNAP_READ_IMAGE, (_event, filePath: string) => {
     const buffer = fs.readFileSync(filePath);
     return `data:image/png;base64,${buffer.toString('base64')}`;
+  });
+
+  // Menu window IPC
+  ipcMain.on(
+    EVENTS.MENU_OPEN,
+    (
+      event,
+      params: {
+        screenX: number;
+        screenY: number;
+        activeTool: string;
+        activeColor: string;
+        activeStrokeWidth: number;
+        hasShadow: boolean;
+        hasAnnotations: boolean;
+      },
+    ) => {
+      const parentWin = BrowserWindow.fromWebContents(event.sender);
+      if (!parentWin) return;
+      openMenuWindow({ ...params, parentWinId: parentWin.id });
+    },
+  );
+
+  ipcMain.on(EVENTS.MENU_DISMISS, () => {
+    closeMenuWindow();
+  });
+
+  ipcMain.on(EVENTS.MENU_ACTION, (_event, payload) => {
+    const parentId = getParentSnapWindowId();
+    if (parentId === null) return;
+    const parent = BrowserWindow.fromId(parentId);
+    if (parent && !parent.isDestroyed()) {
+      parent.webContents.send(EVENTS.MENU_ACTION, payload);
+    }
   });
 
   // IPC handlers — Annotations

@@ -21,6 +21,12 @@ beforeEach(() => {
         getAnnotations: vi.fn().mockResolvedValue(null),
         duplicate: vi.fn().mockResolvedValue(undefined),
         regenerateThumbnail: vi.fn().mockResolvedValue(undefined),
+        openMenu: vi.fn(),
+        onMenuAction: vi.fn(),
+      },
+      menu: {
+        dismiss: vi.fn(),
+        action: vi.fn(),
       },
       library: {
         getSnaps: vi.fn().mockResolvedValue([]),
