@@ -269,6 +269,7 @@ function createMenubar() {
       const thumb = image.resize({ width: thumbWidth, height: thumbHeight });
 
       fs.writeFileSync(snap.thumbPath, thumb.toPNG());
+      updateSnap(snapId, { thumbnailUpdatedAt: new Date().toISOString() });
       log.info(`Thumbnail regenerated for snap ${snapId}`);
       notifyTrayUpdated();
     },
@@ -362,6 +363,7 @@ function registerGlobalShortcut() {
         isOpen: 1,
         createdAt: result.createdAt,
         annotations: null,
+        thumbnailUpdatedAt: result.createdAt,
       });
 
       createSnapWindow(result);

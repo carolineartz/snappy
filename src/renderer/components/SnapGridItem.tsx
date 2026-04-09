@@ -33,7 +33,7 @@ export function SnapGridItem({ snap, onOpen, onDelete }: SnapGridItemProps) {
     window.snappy.library.readThumbnail(snap.thumbPath).then((src) => {
       setThumbSrc(src);
     });
-  }, [snap.thumbPath]);
+  }, [snap.thumbPath, snap.thumbnailUpdatedAt]);
 
   const handleDoubleClick = () => {
     onOpen(snap.id);

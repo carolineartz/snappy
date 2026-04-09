@@ -10,6 +10,7 @@ function makeSnap(overrides: Partial<SnapItem> = {}): SnapItem {
     sourceApp: 'Safari',
     isOpen: 0,
     createdAt: new Date().toISOString(),
+    thumbnailUpdatedAt: null,
     ...overrides,
   };
 }

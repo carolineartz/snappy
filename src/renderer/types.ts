@@ -4,4 +4,5 @@ export interface SnapItem {
   sourceApp: string | null;
   isOpen: number;
   createdAt: string;
+  thumbnailUpdatedAt: string | null;
 }

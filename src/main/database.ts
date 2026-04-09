@@ -19,6 +19,7 @@ export interface SnapRecord {
   isOpen: number;
   createdAt: string;
   annotations: string | null;
+  thumbnailUpdatedAt: string | null;
 }
 
 export function initDatabase(): void {
@@ -42,16 +43,24 @@ export function initDatabase(): void {
       hasShadow  INTEGER DEFAULT 1,
       isOpen     INTEGER DEFAULT 1,
       createdAt  TEXT NOT NULL,
-      annotations TEXT DEFAULT NULL
+      annotations TEXT DEFAULT NULL,
+      thumbnailUpdatedAt TEXT DEFAULT NULL
     )
   `);
 
-  // Migration: add annotations column for existing databases
+  // Migrations for existing databases
   const columns = db.pragma('table_info(snaps)') as { name: string }[];
-  const hasAnnotations = columns.some((col) => col.name === 'annotations');
-  if (!hasAnnotations) {
+  const columnNames = new Set(columns.map((col) => col.name));
+
+  if (!columnNames.has('annotations')) {
     db.exec('ALTER TABLE snaps ADD COLUMN annotations TEXT DEFAULT NULL');
     log.info('Migrated: added annotations column');
+  }
+  if (!columnNames.has('thumbnailUpdatedAt')) {
+    db.exec(
+      'ALTER TABLE snaps ADD COLUMN thumbnailUpdatedAt TEXT DEFAULT NULL',
+    );
+    log.info('Migrated: added thumbnailUpdatedAt column');
   }
 
   log.info(`Database initialized at ${dbPath}`);
@@ -59,8 +68,8 @@ export function initDatabase(): void {
 
 export function insertSnap(snap: SnapRecord): void {
   const stmt = db.prepare(`
-    INSERT INTO snaps (id, filePath, thumbPath, sourceApp, width, height, posX, posY, opacity, hasShadow, isOpen, createdAt, annotations)
-    VALUES (@id, @filePath, @thumbPath, @sourceApp, @width, @height, @posX, @posY, @opacity, @hasShadow, @isOpen, @createdAt, @annotations)
+    INSERT INTO snaps (id, filePath, thumbPath, sourceApp, width, height, posX, posY, opacity, hasShadow, isOpen, createdAt, annotations, thumbnailUpdatedAt)
+    VALUES (@id, @filePath, @thumbPath, @sourceApp, @width, @height, @posX, @posY, @opacity, @hasShadow, @isOpen, @createdAt, @annotations, @thumbnailUpdatedAt)
   `);
   stmt.run(snap);
 }
@@ -70,7 +79,13 @@ export function updateSnap(
   fields: Partial<
     Pick<
       SnapRecord,
-      'posX' | 'posY' | 'opacity' | 'hasShadow' | 'isOpen' | 'annotations'
+      | 'posX'
+      | 'posY'
+      | 'opacity'
+      | 'hasShadow'
+      | 'isOpen'
+      | 'annotations'
+      | 'thumbnailUpdatedAt'
     >
   >,
 ): void {
@@ -112,8 +127,8 @@ export function duplicateSnap(
   newThumbPath: string,
 ): void {
   const stmt = db.prepare(`
-    INSERT INTO snaps (id, filePath, thumbPath, sourceApp, width, height, posX, posY, opacity, hasShadow, isOpen, createdAt, annotations)
-    SELECT @newId, @newFilePath, @newThumbPath, sourceApp, width, height, NULL, NULL, 1.0, 1, 1, createdAt, annotations
+    INSERT INTO snaps (id, filePath, thumbPath, sourceApp, width, height, posX, posY, opacity, hasShadow, isOpen, createdAt, annotations, thumbnailUpdatedAt)
+    SELECT @newId, @newFilePath, @newThumbPath, sourceApp, width, height, NULL, NULL, 1.0, 1, 1, createdAt, annotations, thumbnailUpdatedAt
     FROM snaps WHERE id = @originalId
   `);
   stmt.run({ originalId, newId, newFilePath, newThumbPath });

@@ -79,6 +79,9 @@ export function SnapViewer() {
     if (!dimensions.width || !dimensions.height) return null;
     if (!imgEl.naturalWidth || !imgEl.naturalHeight) return null;
 
+    // Force Konva to flush any pending draws before capture
+    stage.batchDraw();
+
     const canvas = document.createElement('canvas');
     canvas.width = imgEl.naturalWidth;
     canvas.height = imgEl.naturalHeight;
