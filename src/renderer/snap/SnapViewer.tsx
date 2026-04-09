@@ -111,12 +111,17 @@ export function SnapViewer() {
 
     if (snapId.current) {
       window.snappy.snap.saveAnnotations(snapId.current, annotationsJson);
-      setTimeout(() => {
-        const dataUrl = getCompositeDataUrl();
-        if (dataUrl && snapId.current) {
-          window.snappy.snap.regenerateThumbnail(snapId.current, dataUrl);
-        }
-      }, 100);
+
+      // Wait for Konva to render the updated annotations before capturing.
+      // Two animation frames ensures the canvas has fully painted.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const dataUrl = getCompositeDataUrl();
+          if (dataUrl && snapId.current) {
+            window.snappy.snap.regenerateThumbnail(snapId.current, dataUrl);
+          }
+        });
+      });
     }
   }, [annotationsJson, getCompositeDataUrl]);
 
