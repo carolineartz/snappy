@@ -17,13 +17,7 @@ export const EVENTS = {
   SNAP_COPY: 'snappy:snap-copy',
   SNAP_COPY_COMPOSITE: 'snappy:snap-copy-composite',
   SNAP_TOGGLE_SHADOW: 'snappy:snap-toggle-shadow',
-  SNAP_CONTEXT_MENU: 'snappy:snap-context-menu',
   SNAP_READ_IMAGE: 'snappy:snap-read-image',
-
-  // Annotations — main → renderer
-  SNAP_SET_TOOL: 'snappy:snap-set-tool',
-  SNAP_SET_COLOR: 'snappy:snap-set-color',
-  SNAP_SET_STROKE: 'snappy:snap-set-stroke',
 
   // Annotations — renderer → main
   SNAP_SAVE_ANNOTATIONS: 'snappy:snap-save-annotations',

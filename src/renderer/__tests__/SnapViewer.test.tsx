@@ -85,9 +85,9 @@ describe('SnapViewer', () => {
     const container = screen.getByAltText('Screenshot').parentElement!;
     await user.pointer({ keys: '[MouseRight]', target: container });
 
-    expect(window.snappy.snap.showContextMenu).toHaveBeenCalledWith(
-      TEST_FILE_PATH,
-    );
+    // Custom context menu should render with tool/color options
+    expect(screen.getByText('Copy Image')).toBeInTheDocument();
+    expect(screen.getByText('Close')).toBeInTheDocument();
   });
 
   it('adjusts opacity on wheel scroll down (more transparent)', async () => {

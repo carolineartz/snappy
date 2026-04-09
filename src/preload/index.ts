@@ -1,5 +1,4 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { AnnotationTool } from '../shared/annotation-types';
 import { EVENTS } from '../shared/events';
 
 const snappyAPI = {
@@ -18,8 +17,6 @@ const snappyAPI = {
     copyComposite: (dataUrl: string) =>
       ipcRenderer.send(EVENTS.SNAP_COPY_COMPOSITE, dataUrl),
     toggleShadow: () => ipcRenderer.send(EVENTS.SNAP_TOGGLE_SHADOW),
-    showContextMenu: (filePath: string) =>
-      ipcRenderer.send(EVENTS.SNAP_CONTEXT_MENU, filePath),
     readImage: (filePath: string) =>
       ipcRenderer.invoke(EVENTS.SNAP_READ_IMAGE, filePath) as Promise<string>,
 
@@ -34,23 +31,6 @@ const snappyAPI = {
       ipcRenderer.invoke(EVENTS.SNAP_DUPLICATE, snapId),
     regenerateThumbnail: (snapId: string, dataUrl: string) =>
       ipcRenderer.invoke(EVENTS.SNAP_REGENERATE_THUMBNAIL, snapId, dataUrl),
-
-    // Tool/color/stroke selection from context menu (main → renderer)
-    onSetTool: (callback: (tool: AnnotationTool) => void) => {
-      ipcRenderer.on(EVENTS.SNAP_SET_TOOL, (_e, tool: AnnotationTool) =>
-        callback(tool),
-      );
-    },
-    onSetColor: (callback: (color: string) => void) => {
-      ipcRenderer.on(EVENTS.SNAP_SET_COLOR, (_e, color: string) =>
-        callback(color),
-      );
-    },
-    onSetStroke: (callback: (width: number) => void) => {
-      ipcRenderer.on(EVENTS.SNAP_SET_STROKE, (_e, width: number) =>
-        callback(width),
-      );
-    },
   },
   library: {
     getSnaps: () => ipcRenderer.invoke(EVENTS.LIBRARY_GET_SNAPS),

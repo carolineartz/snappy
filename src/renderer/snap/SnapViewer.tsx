@@ -3,11 +3,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Annotation, TextAnnotation } from '../../shared/annotation-types';
 import { DEFAULT_FONT_SIZE } from '../../shared/annotation-types';
 import { AnnotationLayer } from './AnnotationLayer';
+import { ContextMenu } from './ContextMenu';
 import { useAnnotations } from './useAnnotations';
 
 export function SnapViewer() {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [hasShadow, setHasShadow] = useState(true);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const isDragging = useRef(false);
@@ -70,14 +76,6 @@ export function SnapViewer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Listen for tool/color/stroke changes from context menu (main → renderer)
-  useEffect(() => {
-    window.snappy.snap.onSetTool(ann.setTool);
-    window.snappy.snap.onSetColor(ann.setColor);
-    window.snappy.snap.onSetStroke(ann.setStrokeWidth);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // Composite image + annotations for clipboard/thumbnail
   const getCompositeDataUrl = useCallback((): string | null => {
     const stage = stageRef.current;
@@ -105,15 +103,12 @@ export function SnapViewer() {
   const annotationsJson = JSON.stringify(ann.annotations);
   const prevAnnotationsJson = useRef(annotationsJson);
   useEffect(() => {
-    // Skip the initial render (loading from DB sets annotations too)
     if (annotationsJson === prevAnnotationsJson.current) return;
     prevAnnotationsJson.current = annotationsJson;
 
     if (snapId.current) {
       window.snappy.snap.saveAnnotations(snapId.current, annotationsJson);
 
-      // Wait for Konva to render the updated annotations before capturing.
-      // Two animation frames ensures the canvas has fully painted.
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           const dataUrl = getCompositeDataUrl();
@@ -124,17 +119,6 @@ export function SnapViewer() {
       });
     }
   }, [annotationsJson, getCompositeDataUrl]);
-
-  // Listen for revert (main sends SNAP_SAVE_ANNOTATIONS with null)
-  useEffect(() => {
-    const handler = (_event: unknown, data: string | null) => {
-      if (data === null) {
-        ann.clearAll();
-      }
-    };
-    // @ts-expect-error — onSetTool pattern reuse; revert uses SNAP_SAVE_ANNOTATIONS channel
-    window.snappy.snap.onSaveAnnotations?.(handler);
-  }, [ann.clearAll]);
 
   const resetToPointer = useCallback(() => {
     ann.setTool('pointer');
@@ -153,7 +137,7 @@ export function SnapViewer() {
     [ann, resetToPointer],
   );
 
-  // Text tool: click on stage → open textarea
+  // Text tool
   const handleTextClick = useCallback((x: number, y: number) => {
     setTextEditing({ x, y });
     setTimeout(() => textareaRef.current?.focus(), 0);
@@ -188,16 +172,51 @@ export function SnapViewer() {
         return;
       }
     }
-    // No annotations — copy original file
     if (filePath.current) {
       window.snappy.snap.copy(filePath.current);
     }
   }, [ann.annotations.length, getCompositeDataUrl]);
 
+  // Context menu actions
+  const handleToggleShadow = useCallback(() => {
+    window.snappy.snap.toggleShadow();
+    setHasShadow((prev) => !prev);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    isClosing.current = true;
+    isDragging.current = false;
+    window.snappy.snap.close();
+  }, []);
+
+  const handleDelete = useCallback(() => {
+    if (snapId.current) {
+      window.snappy.snap.close();
+    }
+    // Delete is handled by the main process after close
+    if (snapId.current && filePath.current) {
+      window.snappy.library.deleteSnap(snapId.current);
+    }
+  }, []);
+
+  const handleDuplicate = useCallback(() => {
+    if (snapId.current) {
+      window.snappy.snap.duplicate(snapId.current);
+    }
+  }, []);
+
+  const handleRevert = useCallback(() => {
+    ann.clearAll();
+  }, [ann]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        if (contextMenu) {
+          setContextMenu(null);
+          return;
+        }
         if (textEditing) {
           setTextEditing(null);
         }
@@ -208,7 +227,7 @@ export function SnapViewer() {
       }
       if (e.metaKey && e.key === 'p') {
         e.preventDefault();
-        window.snappy.snap.toggleShadow();
+        handleToggleShadow();
       }
       if (e.metaKey && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
@@ -221,7 +240,14 @@ export function SnapViewer() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [textEditing, resetToPointer, copySnapToClipboard, ann]);
+  }, [
+    textEditing,
+    contextMenu,
+    resetToPointer,
+    copySnapToClipboard,
+    handleToggleShadow,
+    ann,
+  ]);
 
   // Drag handlers — only active when pointer tool is selected
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -252,9 +278,7 @@ export function SnapViewer() {
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (filePath.current) {
-      window.snappy.snap.showContextMenu(filePath.current);
-    }
+    setContextMenu({ x: e.clientX, y: e.clientY });
   };
 
   const handleDoubleClick = () => {
@@ -326,6 +350,29 @@ export function SnapViewer() {
               setTextEditing(null);
             }
           }}
+        />
+      )}
+
+      {/* Custom context menu */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          activeTool={ann.activeTool}
+          activeColor={ann.activeColor}
+          activeStrokeWidth={ann.activeStrokeWidth}
+          hasShadow={hasShadow}
+          hasAnnotations={ann.annotations.length > 0}
+          onSetTool={ann.setTool}
+          onSetColor={ann.setColor}
+          onSetStroke={ann.setStrokeWidth}
+          onCopy={copySnapToClipboard}
+          onToggleShadow={handleToggleShadow}
+          onClose={handleClose}
+          onDelete={handleDelete}
+          onDuplicate={handleDuplicate}
+          onRevert={handleRevert}
+          onDismiss={() => setContextMenu(null)}
         />
       )}
     </div>

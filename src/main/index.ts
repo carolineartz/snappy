@@ -7,18 +7,10 @@ import {
   clipboard,
   globalShortcut,
   ipcMain,
-  Menu,
   nativeImage,
 } from 'electron';
 import log from 'electron-log';
 import { menubar } from 'menubar';
-import type { AnnotationTool } from '../shared/annotation-types';
-import {
-  DEFAULT_COLOR,
-  DEFAULT_COLORS,
-  DEFAULT_STROKE_WIDTH,
-  DEFAULT_STROKE_WIDTHS,
-} from '../shared/annotation-types';
 import { APP_NAME, CAPTURE_SHORTCUT, WINDOW_CONFIG } from '../shared/constants';
 import { EVENTS } from '../shared/events';
 import { captureScreen } from './capture';
@@ -35,7 +27,6 @@ import {
 import {
   closeSnapWindow,
   createSnapWindow,
-  getSnapIdForWindow,
   getSnapWindows,
   reopenSnapWindow,
   setOnSnapWindowClosed,
@@ -45,25 +36,7 @@ log.initialize();
 
 const isDev = !!process.env.VITE_DEV_SERVER_URL;
 
-// Module-level ref so registerGlobalShortcut can call it
 let notifyTrayUpdated: () => void = () => {};
-
-// Per-window annotation state tracked in main for context menu rendering
-const windowAnnotationState = new Map<
-  number,
-  { tool: AnnotationTool; color: string; strokeWidth: number }
->();
-
-function getAnnotationState(winId: number) {
-  if (!windowAnnotationState.has(winId)) {
-    windowAnnotationState.set(winId, {
-      tool: 'pointer',
-      color: DEFAULT_COLOR,
-      strokeWidth: DEFAULT_STROKE_WIDTH,
-    });
-  }
-  return windowAnnotationState.get(winId)!;
-}
 
 function createTrayIcon(): Electron.NativeImage {
   const projectRoot = path.resolve(__dirname, '..');
@@ -134,6 +107,13 @@ function createMenubar() {
     }
   });
 
+  // Tray refresh
+  notifyTrayUpdated = () => {
+    mb.window?.webContents.send(EVENTS.SNAPS_UPDATED);
+  };
+
+  setOnSnapWindowClosed(notifyTrayUpdated);
+
   // Custom tray hide logic
   function isSnappyWindow(win: BrowserWindow | null): boolean {
     if (!win) return false;
@@ -160,13 +140,6 @@ function createMenubar() {
     }
   });
 
-  notifyTrayUpdated = () => {
-    mb.window?.webContents.send(EVENTS.SNAPS_UPDATED);
-  };
-
-  // Refresh tray when snap windows close (updates isOpen status + green dot)
-  setOnSnapWindowClosed(notifyTrayUpdated);
-
   mb.on('after-show', notifyTrayUpdated);
 
   // IPC handlers — App
@@ -178,7 +151,6 @@ function createMenubar() {
   ipcMain.on(EVENTS.SNAP_CLOSE, (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
-      windowAnnotationState.delete(win.id);
       closeSnapWindow(win.id);
     }
   });
@@ -203,140 +175,6 @@ function createMenubar() {
     if (win && !win.isDestroyed()) {
       win.setHasShadow(!win.hasShadow());
     }
-  });
-
-  // Context menu — redesigned with annotation tools
-  ipcMain.on(EVENTS.SNAP_CONTEXT_MENU, (event, filePath: string) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (!win || win.isDestroyed()) return;
-
-    const snapId = getSnapIdForWindow(win.id);
-    const hasShadow = win.hasShadow();
-    const state = getAnnotationState(win.id);
-    const snap = snapId ? getSnap(snapId) : undefined;
-    const hasAnnotations = snap?.annotations && snap.annotations !== '[]';
-
-    // Tool items
-    const tools: { label: string; tool: AnnotationTool }[] = [
-      { label: '⇢  Pointer', tool: 'pointer' },
-      { label: '✏️  Draw', tool: 'freehand' },
-      { label: 'T   Text', tool: 'text' },
-      { label: '▢  Rectangle', tool: 'rect' },
-      { label: '○  Ellipse', tool: 'ellipse' },
-      { label: '→  Arrow', tool: 'arrow' },
-      { label: '⌫  Eraser', tool: 'eraser' },
-    ];
-
-    const toolItems: Electron.MenuItemConstructorOptions[] = tools.map(
-      ({ label, tool }) => ({
-        label,
-        type: 'radio' as const,
-        checked: state.tool === tool,
-        click: () => {
-          state.tool = tool;
-          win.webContents.send(EVENTS.SNAP_SET_TOOL, tool);
-        },
-      }),
-    );
-
-    // Color items
-    const colorItems: Electron.MenuItemConstructorOptions[] =
-      DEFAULT_COLORS.map((color) => ({
-        label: color === state.color ? `● ${color}` : `○ ${color}`,
-        type: 'radio' as const,
-        checked: color === state.color,
-        click: () => {
-          state.color = color;
-          win.webContents.send(EVENTS.SNAP_SET_COLOR, color);
-        },
-      }));
-
-    // Stroke width items
-    const strokeItems: Electron.MenuItemConstructorOptions[] =
-      DEFAULT_STROKE_WIDTHS.map((width) => ({
-        label: '━'.repeat(width),
-        type: 'radio' as const,
-        checked: width === state.strokeWidth,
-        click: () => {
-          state.strokeWidth = width;
-          win.webContents.send(EVENTS.SNAP_SET_STROKE, width);
-        },
-      }));
-
-    const menu = Menu.buildFromTemplate([
-      ...toolItems,
-      { type: 'separator' },
-      ...colorItems,
-      { type: 'separator' },
-      ...strokeItems,
-      { type: 'separator' },
-      {
-        label: 'Snap',
-        submenu: [
-          {
-            label: 'Duplicate',
-            click: () => {
-              if (snapId) handleDuplicate(snapId);
-            },
-          },
-          {
-            label: 'Revert to Original',
-            enabled: !!hasAnnotations,
-            click: () => {
-              if (snapId) {
-                updateSnap(snapId, { annotations: null });
-                // Regenerate clean thumbnail
-                const s = getSnap(snapId);
-                if (s) regenerateCleanThumbnail(s.filePath, s.thumbPath);
-                // Tell renderer to clear annotations
-                win.webContents.send(EVENTS.SNAP_SET_TOOL, 'pointer');
-                win.webContents.send(EVENTS.SNAP_SAVE_ANNOTATIONS, null);
-              }
-            },
-          },
-        ],
-      },
-      {
-        label: 'Pixel Perfect Mode',
-        type: 'checkbox',
-        checked: !hasShadow,
-        click: () => {
-          win.setHasShadow(!hasShadow);
-        },
-      },
-      { type: 'separator' },
-      {
-        label: 'Copy Image',
-        accelerator: 'CmdOrCtrl+C',
-        click: () => {
-          const image = nativeImage.createFromPath(filePath);
-          if (!image.isEmpty()) {
-            clipboard.writeImage(image);
-          }
-        },
-      },
-      {
-        label: 'Close',
-        click: () => {
-          closeSnapWindow(win.id);
-        },
-      },
-      {
-        label: 'Delete',
-        click: () => {
-          closeSnapWindow(win.id);
-          if (snapId) {
-            const s = getSnap(snapId);
-            if (s) {
-              deleteSnapFiles(s.filePath, s.thumbPath);
-              deleteSnap(snapId);
-            }
-          }
-        },
-      },
-    ]);
-
-    menu.popup({ window: win });
   });
 
   ipcMain.on(EVENTS.SNAP_COPY, (_event, filePath: string) => {
@@ -455,18 +293,6 @@ function handleDuplicate(snapId: string): void {
   }
 }
 
-function regenerateCleanThumbnail(filePath: string, thumbPath: string): void {
-  const image = nativeImage.createFromPath(filePath);
-  if (image.isEmpty()) return;
-
-  const size = image.getSize();
-  const thumbWidth = 200;
-  const thumbHeight = Math.round((thumbWidth / size.width) * size.height);
-  const thumb = image.resize({ width: thumbWidth, height: thumbHeight });
-
-  fs.writeFileSync(thumbPath, thumb.toPNG());
-}
-
 function deleteSnapFiles(filePath: string, thumbPath: string): void {
   try {
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
@@ -519,5 +345,4 @@ app.on('will-quit', () => {
   closeDatabase();
 });
 
-// Don't quit when all windows are closed — menubar keeps the app alive
 app.on('window-all-closed', () => {});
