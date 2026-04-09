@@ -17,6 +17,36 @@
       "esbuild"
     ]
   },
+  "build": {
+    "appId": "com.carolineartz.snappy",
+    "productName": "Snappy",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "build/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["arm64"]
+        }
+      ],
+      "identity": null,
+      "gatekeeperAssess": false,
+      "hardenedRuntime": false
+    },
+    "dmg": {
+      "writeUpdateInfo": false
+    }
+  },
   "scripts": {
     "postinstall": "electron-rebuild -f",
     "dev": "vite",
@@ -26,7 +56,7 @@
     "lint": "biome check --fix",
     "lint:check": "biome check",
     "format": "biome format --fix",
-    "package:macos": "electron-builder --mac"
+    "package:macos": "pnpm build && electron-builder --mac"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
