@@ -48,6 +48,16 @@ export function App() {
           <SnapGrid snaps={snaps} onOpen={handleOpen} onDelete={handleDelete} />
         )}
       </main>
+
+      <footer className="border-t border-neutral-200 p-2">
+        <button
+          type="button"
+          className="w-full rounded-md border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
+          onClick={() => window.snappy.library.openBrowserWindow()}
+        >
+          Snaps Library
+        </button>
+      </footer>
     </div>
   );
 }

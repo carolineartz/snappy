@@ -84,6 +84,11 @@ const snappyAPI = {
     onSnapsUpdated: (callback: () => void) => {
       ipcRenderer.on(EVENTS.SNAPS_UPDATED, callback);
     },
+    openBrowserWindow: () => ipcRenderer.send(EVENTS.BROWSER_OPEN),
+    getAppIcon: (appName: string) =>
+      ipcRenderer.invoke(EVENTS.GET_APP_ICON, appName) as Promise<
+        string | null
+      >,
   },
 };
 

@@ -5,7 +5,7 @@ import {
   DEFAULT_STROKE_WIDTHS,
 } from '../../shared/annotation-types';
 
-// SVG icons — lucide-style stroke, 16x16 viewBox
+// SVG icons — decorative, inside titled buttons
 const iconProps = {
   width: 16,
   height: 16,

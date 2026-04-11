@@ -9,6 +9,13 @@ export const WINDOW_CONFIG = {
   minHeight: 400,
 } as const;
 
+export const BROWSER_WINDOW_CONFIG = {
+  width: 1100,
+  height: 700,
+  minWidth: 800,
+  minHeight: 500,
+} as const;
+
 export const CAPTURE_SHORTCUT = 'CommandOrControl+Shift+2';
 
 export const SNAPS_DIR_NAME = 'snaps';

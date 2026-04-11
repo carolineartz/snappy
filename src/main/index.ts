@@ -13,6 +13,11 @@ import log from 'electron-log';
 import { menubar } from 'menubar';
 import { APP_NAME, CAPTURE_SHORTCUT, WINDOW_CONFIG } from '../shared/constants';
 import { EVENTS } from '../shared/events';
+import {
+  getBrowserWindow,
+  notifyBrowserUpdated,
+  openBrowserWindow,
+} from './browser-window';
 import { captureScreen } from './capture';
 import {
   closeDatabase,
@@ -132,6 +137,7 @@ function createMenubar() {
   // Tray refresh
   notifyTrayUpdated = () => {
     mb.window?.webContents.send(EVENTS.SNAPS_UPDATED);
+    notifyBrowserUpdated();
   };
 
   setOnSnapWindowClosed(notifyTrayUpdated);
@@ -141,6 +147,7 @@ function createMenubar() {
     if (!win) return false;
     if (win.id === mb.window?.id) return true;
     if (win.id === getMenuWindow()?.id) return true;
+    if (win.id === getBrowserWindow()?.id) return true;
     return Array.from(getSnapWindows().values()).some(
       (entry) => entry.win.id === win.id,
     );
@@ -327,6 +334,38 @@ function createMenubar() {
     if (!fs.existsSync(thumbPath)) return null;
     const buffer = fs.readFileSync(thumbPath);
     return `data:image/png;base64,${buffer.toString('base64')}`;
+  });
+
+  // Browser window
+  ipcMain.on(EVENTS.BROWSER_OPEN, () => {
+    openBrowserWindow();
+  });
+
+  // App icon retrieval — cached in memory
+  const appIconCache = new Map<string, string | null>();
+  ipcMain.handle(EVENTS.GET_APP_ICON, async (_event, appName: string) => {
+    if (appIconCache.has(appName)) return appIconCache.get(appName);
+
+    try {
+      const { execSync } = require('node:child_process');
+      const appPath = execSync(
+        `osascript -e 'POSIX path of (path to application "${appName}")'`,
+        { encoding: 'utf-8', timeout: 3000 },
+      ).trim();
+
+      if (!appPath) {
+        appIconCache.set(appName, null);
+        return null;
+      }
+
+      const icon = await app.getFileIcon(appPath, { size: 'normal' });
+      const dataUrl = `data:image/png;base64,${icon.toPNG().toString('base64')}`;
+      appIconCache.set(appName, dataUrl);
+      return dataUrl;
+    } catch {
+      appIconCache.set(appName, null);
+      return null;
+    }
   });
 }
 

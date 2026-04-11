@@ -33,6 +33,12 @@ export const EVENTS = {
   MENU_ACTION: 'snappy:menu-action',
   MENU_STATE_UPDATE: 'snappy:menu-state-update',
 
+  // Browser window
+  BROWSER_OPEN: 'snappy:browser-open',
+
+  // App icons
+  GET_APP_ICON: 'snappy:get-app-icon',
+
   // Library
   LIBRARY_GET_SNAPS: 'snappy:library-get-snaps',
   LIBRARY_OPEN_SNAP: 'snappy:library-open-snap',
