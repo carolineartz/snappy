@@ -47,14 +47,23 @@ function getFrontmostApp(): string | null {
 }
 
 /**
- * Generate a thumbnail at THUMBNAIL_WIDTH, maintaining aspect ratio.
+ * Generate a thumbnail with the largest dimension at THUMBNAIL_WIDTH.
+ * This ensures both wide and tall screenshots stay sharp.
  */
 function generateThumbnail(imagePath: string, thumbPath: string): void {
   const image = nativeImage.createFromPath(imagePath);
   const size = image.getSize();
 
-  const thumbWidth = THUMBNAIL_WIDTH;
-  const thumbHeight = Math.round((thumbWidth / size.width) * size.height);
+  let thumbWidth: number;
+  let thumbHeight: number;
+
+  if (size.width >= size.height) {
+    thumbWidth = THUMBNAIL_WIDTH;
+    thumbHeight = Math.round((THUMBNAIL_WIDTH / size.width) * size.height);
+  } else {
+    thumbHeight = THUMBNAIL_WIDTH;
+    thumbWidth = Math.round((THUMBNAIL_WIDTH / size.height) * size.width);
+  }
 
   const thumb = image.resize({ width: thumbWidth, height: thumbHeight });
   fs.writeFileSync(thumbPath, thumb.toPNG());

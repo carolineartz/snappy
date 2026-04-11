@@ -295,13 +295,20 @@ function createMenubar() {
       const image = nativeImage.createFromBuffer(buffer);
       const size = image.getSize();
 
-      const thumbHeight = Math.round(
-        (THUMBNAIL_WIDTH / size.width) * size.height,
-      );
-      const thumb = image.resize({
-        width: THUMBNAIL_WIDTH,
-        height: thumbHeight,
-      });
+      let thumbWidth: number;
+      let thumbHeight: number;
+      if (size.width >= size.height) {
+        thumbWidth = THUMBNAIL_WIDTH;
+        thumbHeight = Math.round(
+          (THUMBNAIL_WIDTH / size.width) * size.height,
+        );
+      } else {
+        thumbHeight = THUMBNAIL_WIDTH;
+        thumbWidth = Math.round(
+          (THUMBNAIL_WIDTH / size.height) * size.width,
+        );
+      }
+      const thumb = image.resize({ width: thumbWidth, height: thumbHeight });
 
       fs.writeFileSync(snap.thumbPath, thumb.toPNG());
       updateSnap(snapId, { thumbnailUpdatedAt: new Date().toISOString() });

@@ -54,7 +54,7 @@ export function BrowserGridItem({
     <>
       {/* biome-ignore lint/a11y/noStaticElementInteractions: grid item with double-click */}
       <div
-        className="group relative flex-shrink-0 cursor-default overflow-hidden rounded bg-neutral-100"
+        className="group relative flex-shrink-0 cursor-default overflow-hidden rounded bg-neutral-100 ring-1 ring-black/[0.06]"
         style={{ width: itemWidth, height: ROW_HEIGHT }}
         onDoubleClick={handleDoubleClick}
         onContextMenu={handleContextMenu}
