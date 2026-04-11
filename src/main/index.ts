@@ -12,7 +12,12 @@ import {
 } from 'electron';
 import log from 'electron-log';
 import { menubar } from 'menubar';
-import { APP_NAME, CAPTURE_SHORTCUT, WINDOW_CONFIG } from '../shared/constants';
+import {
+  APP_NAME,
+  CAPTURE_SHORTCUT,
+  THUMBNAIL_WIDTH,
+  WINDOW_CONFIG,
+} from '../shared/constants';
 import { EVENTS } from '../shared/events';
 import {
   getBrowserWindow,
@@ -290,9 +295,13 @@ function createMenubar() {
       const image = nativeImage.createFromBuffer(buffer);
       const size = image.getSize();
 
-      const thumbWidth = 200;
-      const thumbHeight = Math.round((thumbWidth / size.width) * size.height);
-      const thumb = image.resize({ width: thumbWidth, height: thumbHeight });
+      const thumbHeight = Math.round(
+        (THUMBNAIL_WIDTH / size.width) * size.height,
+      );
+      const thumb = image.resize({
+        width: THUMBNAIL_WIDTH,
+        height: thumbHeight,
+      });
 
       fs.writeFileSync(snap.thumbPath, thumb.toPNG());
       updateSnap(snapId, { thumbnailUpdatedAt: new Date().toISOString() });

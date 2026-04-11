@@ -19,3 +19,6 @@ export const BROWSER_WINDOW_CONFIG = {
 export const CAPTURE_SHORTCUT = 'CommandOrControl+Shift+2';
 
 export const SNAPS_DIR_NAME = 'snaps';
+
+// Generate thumbnails at 2x for Retina clarity
+export const THUMBNAIL_WIDTH = 400;

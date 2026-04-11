@@ -328,7 +328,9 @@ export function SnapViewer() {
     // biome-ignore lint/a11y/noStaticElementInteractions: snap window with manual drag
     <div
       ref={containerRef}
-      className="relative h-screen w-screen select-none overflow-hidden"
+      className={`relative h-screen w-screen select-none overflow-hidden ${
+        hasShadow ? 'ring-1 ring-black/15' : ''
+      }`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

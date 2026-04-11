@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { app, nativeImage, screen } from 'electron';
 import log from 'electron-log';
-import { SNAPS_DIR_NAME } from '../shared/constants';
+import { SNAPS_DIR_NAME, THUMBNAIL_WIDTH } from '../shared/constants';
 
 export interface CaptureResult {
   id: string;
@@ -47,13 +47,13 @@ function getFrontmostApp(): string | null {
 }
 
 /**
- * Generate a thumbnail (200px wide, maintaining aspect ratio).
+ * Generate a thumbnail at THUMBNAIL_WIDTH, maintaining aspect ratio.
  */
 function generateThumbnail(imagePath: string, thumbPath: string): void {
   const image = nativeImage.createFromPath(imagePath);
   const size = image.getSize();
 
-  const thumbWidth = 200;
+  const thumbWidth = THUMBNAIL_WIDTH;
   const thumbHeight = Math.round((thumbWidth / size.width) * size.height);
 
   const thumb = image.resize({ width: thumbWidth, height: thumbHeight });
