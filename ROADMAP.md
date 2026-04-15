@@ -53,12 +53,29 @@ Features that build on the existing foundation without major architectural chang
 - Beyond tags — a way to group snaps into named folders in the sidebar
 - Drag snaps into folders in the browser grid
 
+## Settings interface
+
+A preferences window (or panel) for configuring default behavior and shortcuts.
+
+### Ideas for settings
+- **Auto-copy on capture** — automatically put new snaps on the clipboard. Toggle on/off.
+- **Keyboard shortcuts** — rebind the capture shortcut (currently `Cmd+Shift+2`) and potentially other app-level shortcuts
+- **Default Pixel Perfect mode** — snaps open with shadow off by default
+- **Default opacity** — (if you want to start new snaps translucent)
+- **Thumbnail size / storage** — let user tune how large thumbnails are, or clean up old ones
+- **Snaps storage location** — currently `userData/snaps/`, maybe let user choose
+
+### Where it lives
+- Probably a new `SettingsWindow` (similar pattern to `BrowserWindow`) — standard macOS window opened from the tray or a gear icon somewhere
+- Settings stored in a `settings` table or JSON file in userData
+- Main process reads settings on startup and applies them; renderer subscribes to changes
+
 ## Known issues
 
 - **Packaged DMG doesn't work on second Mac** — dev mode works fine. Haven't debugged yet. (Currently running dev mode on the other machine.)
 
-## Explicitly out of scope (for now)
+## Explicitly out of scope
 
-- Sharing features (SnappyLink, social integrations) — original Snappy had these but Caroline explicitly deprioritized for MVP
+- Sharing features (SnappyLink, social integrations) — not useful for personal workflow
 - Windows/Linux support — personal macOS-only app
 - iCloud sync — original had it; not needed yet
