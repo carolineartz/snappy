@@ -15,12 +15,11 @@ import { menubar } from 'menubar';
 import {
   APP_NAME,
   CAPTURE_SHORTCUT,
-  THUMBNAIL_WIDTH,
+  THUMBNAIL_SIZE,
   WINDOW_CONFIG,
 } from '../shared/constants';
 import { EVENTS } from '../shared/events';
 import {
-  getBrowserWindow,
   notifyBrowserUpdated,
   openBrowserWindow,
 } from './browser-window';
@@ -136,11 +135,7 @@ function createMenubar() {
     registerGlobalShortcut();
   });
 
-  mb.on('after-create-window', () => {
-    if (isDev) {
-      mb.window?.webContents.openDevTools({ mode: 'detach' });
-    }
-  });
+  // DevTools can be opened manually with Cmd+Option+I if needed
 
   // Tray refresh
   notifyTrayUpdated = () => {
@@ -150,12 +145,13 @@ function createMenubar() {
 
   setOnSnapWindowClosed(notifyTrayUpdated);
 
-  // Custom tray hide logic
+  // Custom tray hide logic — tray stays open when interacting with
+  // floating snaps or the annotation menu, but CLOSES when focus goes
+  // to the library browser window (or anything outside the app).
   function isSnappyWindow(win: BrowserWindow | null): boolean {
     if (!win) return false;
     if (win.id === mb.window?.id) return true;
     if (win.id === getMenuWindow()?.id) return true;
-    if (win.id === getBrowserWindow()?.id) return true;
     return Array.from(getSnapWindows().values()).some(
       (entry) => entry.win.id === win.id,
     );
@@ -298,14 +294,14 @@ function createMenubar() {
       let thumbWidth: number;
       let thumbHeight: number;
       if (size.width >= size.height) {
-        thumbWidth = THUMBNAIL_WIDTH;
+        thumbWidth = THUMBNAIL_SIZE;
         thumbHeight = Math.round(
-          (THUMBNAIL_WIDTH / size.width) * size.height,
+          (THUMBNAIL_SIZE / size.width) * size.height,
         );
       } else {
-        thumbHeight = THUMBNAIL_WIDTH;
+        thumbHeight = THUMBNAIL_SIZE;
         thumbWidth = Math.round(
-          (THUMBNAIL_WIDTH / size.height) * size.width,
+          (THUMBNAIL_SIZE / size.height) * size.width,
         );
       }
       const thumb = image.resize({ width: thumbWidth, height: thumbHeight });
