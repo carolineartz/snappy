@@ -69,6 +69,17 @@ export function initDatabase(): void {
     log.info('Migrated: added thumbnailUpdatedAt column');
   }
 
+  // Tags table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS snap_tags (
+      snap_id  TEXT NOT NULL,
+      tag      TEXT NOT NULL,
+      PRIMARY KEY (snap_id, tag),
+      FOREIGN KEY (snap_id) REFERENCES snaps(id) ON DELETE CASCADE
+    )
+  `);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_snap_tags_tag ON snap_tags(tag)');
+
   log.info(`Database initialized at ${dbPath}`);
 }
 
@@ -139,6 +150,41 @@ export function duplicateSnap(
     FROM snaps WHERE id = @originalId
   `);
   stmt.run({ originalId, newId, newFilePath, newThumbPath });
+}
+
+// --- Tag operations ---
+
+export function getTagsForSnap(snapId: string): string[] {
+  const stmt = db.prepare('SELECT tag FROM snap_tags WHERE snap_id = ?');
+  const rows = stmt.all(snapId) as { tag: string }[];
+  return rows.map((r) => r.tag);
+}
+
+export function addTagToSnap(snapId: string, tag: string): void {
+  const stmt = db.prepare(
+    'INSERT OR IGNORE INTO snap_tags (snap_id, tag) VALUES (?, ?)',
+  );
+  stmt.run(snapId, tag);
+}
+
+export function removeTagFromSnap(snapId: string, tag: string): void {
+  const stmt = db.prepare(
+    'DELETE FROM snap_tags WHERE snap_id = ? AND tag = ?',
+  );
+  stmt.run(snapId, tag);
+}
+
+export function getAllTags(): { tag: string; count: number }[] {
+  const stmt = db.prepare(
+    'SELECT tag, COUNT(*) as count FROM snap_tags GROUP BY tag ORDER BY tag',
+  );
+  return stmt.all() as { tag: string; count: number }[];
+}
+
+export function getSnapsWithTag(tag: string): string[] {
+  const stmt = db.prepare('SELECT snap_id FROM snap_tags WHERE tag = ?');
+  const rows = stmt.all(tag) as { snap_id: string }[];
+  return rows.map((r) => r.snap_id);
 }
 
 export function closeDatabase(): void {

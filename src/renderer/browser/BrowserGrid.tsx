@@ -4,9 +4,11 @@ import { BrowserGridItem } from './BrowserGridItem';
 interface BrowserGridProps {
   snaps: SnapItem[];
   zoom: number;
+  snapTags: Map<string, string[]>;
   onOpen: (snapId: string) => void;
   onDelete: (snapId: string) => void;
   onDuplicate: (snapId: string) => void;
+  onTagsChanged: () => void;
 }
 
 function formatDateSeparator(dateStr: string): string {
@@ -60,9 +62,11 @@ function groupByDate(
 export function BrowserGrid({
   snaps,
   zoom,
+  snapTags,
   onOpen,
   onDelete,
   onDuplicate,
+  onTagsChanged,
 }: BrowserGridProps) {
   const groups = groupByDate(snaps);
 
@@ -87,9 +91,11 @@ export function BrowserGrid({
                 key={snap.id}
                 snap={snap}
                 size={zoom}
+                tags={snapTags.get(snap.id) || []}
                 onOpen={onOpen}
                 onDelete={onDelete}
                 onDuplicate={onDuplicate}
+                onTagsChanged={onTagsChanged}
               />
             ))}
           </div>

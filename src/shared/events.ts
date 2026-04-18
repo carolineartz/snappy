@@ -39,6 +39,12 @@ export const EVENTS = {
   // App icons
   GET_APP_ICON: 'snappy:get-app-icon',
 
+  // Tags
+  TAG_ADD: 'snappy:tag-add',
+  TAG_REMOVE: 'snappy:tag-remove',
+  TAG_GET_FOR_SNAP: 'snappy:tag-get-for-snap',
+  TAG_GET_ALL: 'snappy:tag-get-all',
+
   // Library
   LIBRARY_RENAME_SNAP: 'snappy:library-rename-snap',
   LIBRARY_GET_SNAPS: 'snappy:library-get-snaps',

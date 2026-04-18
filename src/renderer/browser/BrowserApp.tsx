@@ -30,7 +30,10 @@ export function BrowserApp() {
   const [snaps, setSnaps] = useState<SnapItem[]>([]);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
   const [selectedApp, setSelectedApp] = useState<string | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [allTags, setAllTags] = useState<{ tag: string; count: number }[]>([]);
+  const [snapTags, setSnapTags] = useState<Map<string, string[]>>(new Map());
   const [zoom, setZoom] = useState<number>(() => {
     const stored = localStorage.getItem(ZOOM_STORAGE_KEY);
     if (stored) {
@@ -50,10 +53,30 @@ export function BrowserApp() {
     setSnaps(data);
   }, []);
 
+  const loadTags = useCallback(async () => {
+    const tags = await window.snappy.library.getAllTags();
+    setAllTags(tags);
+
+    // Load per-snap tags
+    const data = (await window.snappy.library.getSnaps()) as SnapItem[];
+    const tagMap = new Map<string, string[]>();
+    await Promise.all(
+      data.map(async (snap) => {
+        const t = await window.snappy.library.getTagsForSnap(snap.id);
+        if (t.length > 0) tagMap.set(snap.id, t);
+      }),
+    );
+    setSnapTags(tagMap);
+  }, []);
+
   useEffect(() => {
     loadSnaps();
-    window.snappy.library.onSnapsUpdated(loadSnaps);
-  }, [loadSnaps]);
+    loadTags();
+    window.snappy.library.onSnapsUpdated(() => {
+      loadSnaps();
+      loadTags();
+    });
+  }, [loadSnaps, loadTags]);
 
   // Derive source apps with counts from the full snap list
   const sourceApps = useMemo(() => {
@@ -74,7 +97,10 @@ export function BrowserApp() {
       result = result.filter((s) => (s.sourceApp || 'Other') === selectedApp);
     }
 
-    // Sort by createdAt
+    if (selectedTag) {
+      result = result.filter((s) => snapTags.get(s.id)?.includes(selectedTag));
+    }
+
     const sorted = [...result].sort((a, b) => {
       const cmp =
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
@@ -82,7 +108,7 @@ export function BrowserApp() {
     });
 
     return sorted;
-  }, [snaps, timeFilter, selectedApp, sortDirection]);
+  }, [snaps, timeFilter, selectedApp, selectedTag, snapTags, sortDirection]);
 
   const handleOpen = useCallback(
     async (snapId: string) => {
@@ -117,6 +143,9 @@ export function BrowserApp() {
         sourceApps={sourceApps}
         selectedApp={selectedApp}
         onSelectedAppChange={setSelectedApp}
+        allTags={allTags}
+        selectedTag={selectedTag}
+        onSelectedTagChange={setSelectedTag}
         totalCount={snaps.length}
       />
 
@@ -138,9 +167,11 @@ export function BrowserApp() {
             <BrowserGrid
               snaps={filteredSnaps}
               zoom={zoom}
+              snapTags={snapTags}
               onOpen={handleOpen}
               onDelete={handleDelete}
               onDuplicate={handleDuplicate}
+              onTagsChanged={loadTags}
             />
           )}
         </main>

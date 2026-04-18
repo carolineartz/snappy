@@ -7,6 +7,9 @@ interface FilterPanelProps {
   sourceApps: Map<string, number>;
   selectedApp: string | null;
   onSelectedAppChange: (app: string | null) => void;
+  allTags: { tag: string; count: number }[];
+  selectedTag: string | null;
+  onSelectedTagChange: (tag: string | null) => void;
   totalCount: number;
 }
 
@@ -50,6 +53,9 @@ export function FilterPanel({
   sourceApps,
   selectedApp,
   onSelectedAppChange,
+  allTags,
+  selectedTag,
+  onSelectedTagChange,
   totalCount,
 }: FilterPanelProps) {
   return (
@@ -124,14 +130,41 @@ export function FilterPanel({
 
       <div className="mx-3 border-t border-neutral-200" />
 
-      {/* Tags placeholder — V2 */}
+      {/* Tags */}
       <div className="px-3 py-2">
-        <h3 className="px-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-300">
+        <h3 className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
           Tags
         </h3>
-        <p className="px-2 py-1 text-[11px] text-neutral-300 italic">
-          Coming soon
-        </p>
+        {allTags.length === 0 ? (
+          <p className="px-2 py-1 text-[11px] text-neutral-300 italic">
+            No tags yet
+          </p>
+        ) : (
+          <ul>
+            {allTags.map(({ tag, count }) => (
+              <li key={tag}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    onSelectedTagChange(selectedTag === tag ? null : tag)
+                  }
+                  className={`flex w-full items-center justify-between rounded px-2 py-1 text-left text-[13px] transition-colors ${
+                    selectedTag === tag
+                      ? 'bg-blue-500 text-white'
+                      : 'text-neutral-700 hover:bg-neutral-200/60'
+                  }`}
+                >
+                  <span className="truncate">{tag}</span>
+                  <span
+                    className={`text-[11px] ${selectedTag === tag ? 'text-blue-100' : 'text-neutral-400'}`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

@@ -22,13 +22,17 @@ import { EVENTS } from '../shared/events';
 import { notifyBrowserUpdated, openBrowserWindow } from './browser-window';
 import { captureScreen } from './capture';
 import {
+  addTagToSnap,
   closeDatabase,
   deleteSnap,
   duplicateSnap,
   getAllSnaps,
+  getAllTags,
   getSnap,
+  getTagsForSnap,
   initDatabase,
   insertSnap,
+  removeTagFromSnap,
   updateSnap,
 } from './database';
 import {
@@ -323,6 +327,25 @@ function createMenubar() {
       notifyTrayUpdated();
     },
   );
+
+  // Tag IPC handlers
+  ipcMain.handle(EVENTS.TAG_ADD, (_event, snapId: string, tag: string) => {
+    addTagToSnap(snapId, tag.trim());
+    notifyTrayUpdated();
+  });
+
+  ipcMain.handle(EVENTS.TAG_REMOVE, (_event, snapId: string, tag: string) => {
+    removeTagFromSnap(snapId, tag);
+    notifyTrayUpdated();
+  });
+
+  ipcMain.handle(EVENTS.TAG_GET_FOR_SNAP, (_event, snapId: string) => {
+    return getTagsForSnap(snapId);
+  });
+
+  ipcMain.handle(EVENTS.TAG_GET_ALL, () => {
+    return getAllTags();
+  });
 
   ipcMain.handle(EVENTS.LIBRARY_OPEN_SNAP, (_event, snapId: string) => {
     const snap = getSnap(snapId);

@@ -4,9 +4,11 @@ import type { SnapItem } from '../types';
 interface BrowserGridItemProps {
   snap: SnapItem;
   size: number;
+  tags: string[];
   onOpen: (snapId: string) => void;
   onDelete: (snapId: string) => void;
   onDuplicate: (snapId: string) => void;
+  onTagsChanged: () => void;
 }
 
 function displayName(snap: SnapItem): string {
@@ -17,9 +19,11 @@ function displayName(snap: SnapItem): string {
 export function BrowserGridItem({
   snap,
   size,
+  tags,
   onOpen,
   onDelete,
   onDuplicate,
+  onTagsChanged,
 }: BrowserGridItemProps) {
   const [thumbSrc, setThumbSrc] = useState<string | null>(null);
   const [fullSrc, setFullSrc] = useState<string | null>(null);
@@ -29,7 +33,10 @@ export function BrowserGridItem({
   } | null>(null);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState('');
+  const [isAddingTag, setIsAddingTag] = useState(false);
+  const [tagValue, setTagValue] = useState('');
   const renameRef = useRef<HTMLInputElement>(null);
+  const tagRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -66,6 +73,27 @@ export function BrowserGridItem({
     const trimmed = renameValue.trim();
     window.snappy.library.renameSnap(snap.id, trimmed || null);
     setIsRenaming(false);
+  };
+
+  const startAddTag = () => {
+    setTagValue('');
+    setIsAddingTag(true);
+    setTimeout(() => tagRef.current?.focus(), 0);
+  };
+
+  const commitTag = () => {
+    const trimmed = tagValue.trim();
+    if (trimmed) {
+      window.snappy.library.addTag(snap.id, trimmed);
+      onTagsChanged();
+    }
+    setIsAddingTag(false);
+    setTagValue('');
+  };
+
+  const removeTag = (tag: string) => {
+    window.snappy.library.removeTag(snap.id, tag);
+    onTagsChanged();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -118,7 +146,7 @@ export function BrowserGridItem({
           )}
         </div>
 
-        {/* Label below thumbnail */}
+        {/* Label + tags below thumbnail */}
         <div className="px-0.5 py-1">
           {isRenaming ? (
             <input
@@ -142,6 +170,51 @@ export function BrowserGridItem({
             >
               {displayName(snap)}
             </p>
+          )}
+
+          {/* Tags */}
+          {tags.length > 0 && (
+            <div className="mt-0.5 flex flex-wrap justify-center gap-0.5">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center rounded-full bg-blue-50 px-1.5 py-0 text-[9px] text-blue-600"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    className="ml-0.5 text-blue-400 hover:text-blue-700"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeTag(tag);
+                    }}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Inline tag input */}
+          {isAddingTag && (
+            <input
+              ref={tagRef}
+              type="text"
+              value={tagValue}
+              onChange={(e) => setTagValue(e.target.value)}
+              onBlur={commitTag}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitTag();
+                if (e.key === 'Escape') {
+                  setIsAddingTag(false);
+                  setTagValue('');
+                }
+                e.stopPropagation();
+              }}
+              className="mt-0.5 w-full rounded border border-blue-400 bg-white px-1 py-0.5 text-center text-[10px] text-neutral-800 outline-none"
+              placeholder="tag name"
+            />
           )}
         </div>
       </div>
@@ -177,6 +250,13 @@ export function BrowserGridItem({
               onClick={() => {
                 setContextMenu(null);
                 startRename();
+              }}
+            />
+            <ContextMenuItem
+              label="Add Tag..."
+              onClick={() => {
+                setContextMenu(null);
+                startAddTag();
               }}
             />
             <ContextMenuItem

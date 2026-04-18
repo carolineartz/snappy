@@ -87,6 +87,16 @@ const snappyAPI = {
       ipcRenderer.on(EVENTS.SNAPS_UPDATED, callback);
     },
     openBrowserWindow: () => ipcRenderer.send(EVENTS.BROWSER_OPEN),
+    addTag: (snapId: string, tag: string) =>
+      ipcRenderer.invoke(EVENTS.TAG_ADD, snapId, tag),
+    removeTag: (snapId: string, tag: string) =>
+      ipcRenderer.invoke(EVENTS.TAG_REMOVE, snapId, tag),
+    getTagsForSnap: (snapId: string) =>
+      ipcRenderer.invoke(EVENTS.TAG_GET_FOR_SNAP, snapId) as Promise<string[]>,
+    getAllTags: () =>
+      ipcRenderer.invoke(EVENTS.TAG_GET_ALL) as Promise<
+        { tag: string; count: number }[]
+      >,
     getAppIcon: (appName: string) =>
       ipcRenderer.invoke(EVENTS.GET_APP_ICON, appName) as Promise<
         string | null
