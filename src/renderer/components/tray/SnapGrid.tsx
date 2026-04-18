@@ -1,4 +1,4 @@
-import type { SnapItem } from '../types';
+import type { SnapItem } from '../../types';
 import { SnapGridItem } from './SnapGridItem';
 
 interface SnapGridProps {

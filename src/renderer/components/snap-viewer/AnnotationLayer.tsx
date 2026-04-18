@@ -9,7 +9,7 @@ import type {
   EllipseAnnotation,
   FreehandAnnotation,
   RectAnnotation,
-} from '../../shared/annotation-types';
+} from '../../../shared/annotation-types';
 
 interface AnnotationLayerProps {
   width: number;

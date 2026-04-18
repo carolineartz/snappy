@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { SnapItem } from '../types';
-import { BrowserGrid } from './BrowserGrid';
-import { BrowserHeader } from './BrowserHeader';
+import type { SnapItem } from '../../types';
+import { LibraryGrid } from './LibraryGrid';
+import { LibraryHeader } from './LibraryHeader';
 import { FilterPanel } from './FilterPanel';
 
 export type TimeFilter = 'all' | '24h' | '7d' | '30d';
@@ -26,7 +26,7 @@ function filterByTime(snaps: SnapItem[], filter: TimeFilter): SnapItem[] {
   return snaps.filter((s) => new Date(s.createdAt).getTime() >= cutoff);
 }
 
-export function BrowserApp() {
+export function LibraryApp() {
   const [snaps, setSnaps] = useState<SnapItem[]>([]);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
   const [selectedApp, setSelectedApp] = useState<string | null>(null);
@@ -151,7 +151,7 @@ export function BrowserApp() {
 
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <BrowserHeader
+        <LibraryHeader
           sortDirection={sortDirection}
           onSortDirectionChange={setSortDirection}
           snapCount={filteredSnaps.length}
@@ -164,10 +164,11 @@ export function BrowserApp() {
               <p className="text-neutral-400">No snaps match your filters</p>
             </div>
           ) : (
-            <BrowserGrid
+            <LibraryGrid
               snaps={filteredSnaps}
               zoom={zoom}
               snapTags={snapTags}
+              getTagRecord={() => undefined}
               onOpen={handleOpen}
               onDelete={handleDelete}
               onDuplicate={handleDuplicate}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { SnapItem } from '../types';
+import type { SnapItem } from '../../types';
 
 interface SnapGridItemProps {
   snap: SnapItem;

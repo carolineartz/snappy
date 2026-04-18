@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SnapViewer } from '../snap/SnapViewer';
+import { SnapViewer } from './SnapViewer';
 
 const TEST_FILE_PATH = '/test/image.png';
 

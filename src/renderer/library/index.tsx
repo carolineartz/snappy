@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import '../index.css';
-import { BrowserApp } from './BrowserApp';
+import { LibraryApp } from '../components/library/LibraryApp';
 
 const container = document.getElementById('root');
 const root = createRoot(container!);
-root.render(<BrowserApp />);
+root.render(<LibraryApp />);

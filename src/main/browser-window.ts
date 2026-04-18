@@ -26,9 +26,9 @@ export function openBrowserWindow(): BrowserWindow {
   });
 
   if (isDev && process.env.VITE_DEV_SERVER_URL) {
-    win.loadURL(`${process.env.VITE_DEV_SERVER_URL}browser/index.html`);
+    win.loadURL(`${process.env.VITE_DEV_SERVER_URL}library/index.html`);
   } else {
-    win.loadFile(path.join(__dirname, 'browser', 'index.html'));
+    win.loadFile(path.join(__dirname, 'library', 'index.html'));
   }
 
   win.once('ready-to-show', () => {

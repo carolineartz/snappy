@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { SnapGrid } from './components/SnapGrid';
+import { SnapGrid } from './components/tray/SnapGrid';
 import type { SnapItem } from './types';
 
 export function App() {

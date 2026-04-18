@@ -1,9 +1,9 @@
 import type Konva from 'konva';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Annotation, TextAnnotation } from '../../shared/annotation-types';
-import { DEFAULT_FONT_SIZE } from '../../shared/annotation-types';
+import type { Annotation, TextAnnotation } from '../../../shared/annotation-types';
+import { DEFAULT_FONT_SIZE } from '../../../shared/annotation-types';
 import { AnnotationLayer } from './AnnotationLayer';
-import { useAnnotations } from './useAnnotations';
+import { useAnnotations } from '../../hooks/useAnnotations';
 
 export function SnapViewer() {
   const [imgSrc, setImgSrc] = useState<string | null>(null);

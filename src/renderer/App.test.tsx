@@ -1,8 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { App } from '../App';
-import type { SnapItem } from '../types';
+import { App } from './App';
+import type { SnapItem } from './types';
 
 function makeSnap(overrides: Partial<SnapItem> = {}): SnapItem {
   return {

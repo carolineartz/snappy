@@ -1,7 +1,8 @@
-import type { SortDirection } from './BrowserApp';
-import { ZOOM_MAX, ZOOM_MIN } from './BrowserApp';
+import type { SortDirection } from './LibraryApp';
+import { ZOOM_MAX, ZOOM_MIN } from './LibraryApp';
+import { GridIcon, SortIcon } from '../icons';
 
-interface BrowserHeaderProps {
+interface LibraryHeaderProps {
   sortDirection: SortDirection;
   onSortDirectionChange: (dir: SortDirection) => void;
   snapCount: number;
@@ -9,62 +10,13 @@ interface BrowserHeaderProps {
   onZoomChange: (zoom: number) => void;
 }
 
-const SortIcon = ({ direction }: { direction: SortDirection }) => (
-  <svg
-    aria-hidden="true"
-    width="14"
-    height="14"
-    viewBox="0 0 16 16"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    {direction === 'desc' ? (
-      <>
-        <path d="M8 3 L8 13" />
-        <path d="M4 9 L8 13 L12 9" />
-      </>
-    ) : (
-      <>
-        <path d="M8 13 L8 3" />
-        <path d="M4 7 L8 3 L12 7" />
-      </>
-    )}
-  </svg>
-);
-
-const GridIcon = ({ small }: { small?: boolean }) => (
-  <svg
-    aria-hidden="true"
-    width="12"
-    height="12"
-    viewBox="0 0 16 16"
-    fill="currentColor"
-  >
-    {small ? (
-      <>
-        <rect x="2" y="2" width="4" height="4" rx="0.5" />
-        <rect x="10" y="2" width="4" height="4" rx="0.5" />
-        <rect x="2" y="10" width="4" height="4" rx="0.5" />
-        <rect x="10" y="10" width="4" height="4" rx="0.5" />
-      </>
-    ) : (
-      <>
-        <rect x="2" y="2" width="12" height="12" rx="1" />
-      </>
-    )}
-  </svg>
-);
-
-export function BrowserHeader({
+export function LibraryHeader({
   sortDirection,
   onSortDirectionChange,
   snapCount,
   zoom,
   onZoomChange,
-}: BrowserHeaderProps) {
+}: LibraryHeaderProps) {
   const toggleDirection = () => {
     onSortDirectionChange(sortDirection === 'desc' ? 'asc' : 'desc');
   };

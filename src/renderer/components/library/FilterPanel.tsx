@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { TimeFilter } from './BrowserApp';
+import type { TimeFilter } from './LibraryApp';
 
 interface FilterPanelProps {
   timeFilter: TimeFilter;

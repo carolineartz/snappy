@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import '../index.css';
-import { MenuApp } from './MenuApp';
+import { MenuApp } from '../components/context-menu/MenuApp';
 
 const container = document.getElementById('root');
 const root = createRoot(container!);

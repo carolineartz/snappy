@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { AnnotationTool } from '../../shared/annotation-types';
-import { ContextMenu } from '../snap/ContextMenu';
+import type { AnnotationTool } from '../../../shared/annotation-types';
+import { ContextMenu } from './ContextMenu';
 
 interface MenuState {
   activeTool: AnnotationTool;

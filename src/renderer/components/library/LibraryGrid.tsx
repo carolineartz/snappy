@@ -1,10 +1,12 @@
-import type { SnapItem } from '../types';
-import { BrowserGridItem } from './BrowserGridItem';
+import type { TagSummary } from '../../../shared/tag-colors';
+import type { SnapItem } from '../../types';
+import { LibraryGridItem } from './LibraryGridItem';
 
-interface BrowserGridProps {
+interface LibraryGridProps {
   snaps: SnapItem[];
   zoom: number;
   snapTags: Map<string, string[]>;
+  getTagRecord: (tag: string) => TagSummary | undefined;
   onOpen: (snapId: string) => void;
   onDelete: (snapId: string) => void;
   onDuplicate: (snapId: string) => void;
@@ -59,15 +61,16 @@ function groupByDate(
   return groups;
 }
 
-export function BrowserGrid({
+export function LibraryGrid({
   snaps,
   zoom,
   snapTags,
+  getTagRecord,
   onOpen,
   onDelete,
   onDuplicate,
   onTagsChanged,
-}: BrowserGridProps) {
+}: LibraryGridProps) {
   const groups = groupByDate(snaps);
 
   return (
@@ -87,11 +90,12 @@ export function BrowserGrid({
             }}
           >
             {group.snaps.map((snap) => (
-              <BrowserGridItem
+              <LibraryGridItem
                 key={snap.id}
                 snap={snap}
                 size={zoom}
                 tags={snapTags.get(snap.id) || []}
+                getTagRecord={getTagRecord}
                 onOpen={onOpen}
                 onDelete={onDelete}
                 onDuplicate={onDuplicate}

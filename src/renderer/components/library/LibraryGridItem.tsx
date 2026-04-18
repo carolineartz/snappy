@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import type { SnapItem } from '../types';
+import type { TagSummary } from '../../../shared/tag-colors';
+import type { SnapItem } from '../../types';
+import { TagItem } from './TagItem';
 
-interface BrowserGridItemProps {
+interface LibraryGridItemProps {
   snap: SnapItem;
   size: number;
   tags: string[];
@@ -9,6 +11,7 @@ interface BrowserGridItemProps {
   onDelete: (snapId: string) => void;
   onDuplicate: (snapId: string) => void;
   onTagsChanged: () => void;
+  getTagRecord: (tag: string) => TagSummary | undefined;
 }
 
 function displayName(snap: SnapItem): string {
@@ -16,15 +19,16 @@ function displayName(snap: SnapItem): string {
   return snap.sourceApp || 'Other';
 }
 
-export function BrowserGridItem({
+export function LibraryGridItem({
   snap,
   size,
   tags,
+  getTagRecord,
   onOpen,
   onDelete,
   onDuplicate,
   onTagsChanged,
-}: BrowserGridItemProps) {
+}: LibraryGridItemProps) {
   const [thumbSrc, setThumbSrc] = useState<string | null>(null);
   const [fullSrc, setFullSrc] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{
@@ -105,6 +109,8 @@ export function BrowserGridItem({
 
   const imgSrc = fullSrc ?? thumbSrc;
 
+
+
   return (
     <>
       {/* biome-ignore lint/a11y/noStaticElementInteractions: grid item with interactions */}
@@ -176,22 +182,12 @@ export function BrowserGridItem({
           {tags.length > 0 && (
             <div className="mt-0.5 flex flex-wrap justify-center gap-0.5">
               {tags.map((tag) => (
-                <span
+                <TagItem
                   key={tag}
-                  className="inline-flex items-center rounded-full bg-blue-50 px-1.5 py-0 text-[9px] text-blue-600"
-                >
-                  {tag}
-                  <button
-                    type="button"
-                    className="ml-0.5 text-blue-400 hover:text-blue-700"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeTag(tag);
-                    }}
-                  >
-                    ×
-                  </button>
-                </span>
+                  tag={tag}
+                  getTagRecord={getTagRecord}
+                  removeTag={removeTag}
+                />
               ))}
             </div>
           )}

@@ -5,7 +5,7 @@ export default defineConfig({
     globals: true,
     environment: 'happy-dom',
     restoreMocks: true,
-    setupFiles: ['./src/renderer/__tests__/setup.ts'],
+    setupFiles: ['./src/renderer/__helpers__/setup.ts'],
     coverage: {
       reporter: ['text', 'html', 'lcov'],
       exclude: ['**/*.d.ts', 'build/**', 'dist/**', '**/__tests__/**'],

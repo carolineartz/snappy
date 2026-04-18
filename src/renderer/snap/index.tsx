@@ -1,5 +1,5 @@
 import { createRoot } from 'react-dom/client';
-import { SnapViewer } from './SnapViewer';
+import { SnapViewer } from '../components/snap-viewer/SnapViewer';
 import '../index.css';
 
 const container = document.getElementById('root');
