@@ -1,5 +1,6 @@
 export interface SnapItem {
   id: string;
+  name: string | null;
   filePath: string;
   thumbPath: string;
   sourceApp: string | null;

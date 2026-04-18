@@ -6,6 +6,7 @@ import type { SnapItem } from '../types';
 function makeSnap(overrides: Partial<SnapItem> = {}): SnapItem {
   return {
     id: 'snap-1',
+    name: null,
     thumbPath: '/path/to/thumb.png',
     sourceApp: 'Safari',
     isOpen: 0,

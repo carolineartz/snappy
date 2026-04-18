@@ -32,6 +32,7 @@ beforeEach(() => {
         getSnaps: vi.fn().mockResolvedValue([]),
         openSnap: vi.fn().mockResolvedValue(undefined),
         deleteSnap: vi.fn().mockResolvedValue(undefined),
+        renameSnap: vi.fn().mockResolvedValue(undefined),
         readThumbnail: vi.fn().mockResolvedValue('data:image/png;base64,thumb'),
         onSnapsUpdated: vi.fn(),
         openBrowserWindow: vi.fn(),

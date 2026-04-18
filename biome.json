@@ -34,7 +34,8 @@
         "useImportType": "error"
       },
       "a11y": {
-        "noSvgWithoutTitle": "off"
+        "noSvgWithoutTitle": "off",
+        "noNoninteractiveTabindex": "off"
       },
       "suspicious": {
         "noConsole": "warn"

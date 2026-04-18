@@ -7,6 +7,7 @@ let db: Database.Database;
 
 export interface SnapRecord {
   id: string;
+  name: string | null;
   filePath: string;
   thumbPath: string;
   sourceApp: string | null;
@@ -32,6 +33,7 @@ export function initDatabase(): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS snaps (
       id         TEXT PRIMARY KEY,
+      name       TEXT DEFAULT NULL,
       filePath   TEXT NOT NULL,
       thumbPath  TEXT NOT NULL,
       sourceApp  TEXT,
@@ -56,6 +58,10 @@ export function initDatabase(): void {
     db.exec('ALTER TABLE snaps ADD COLUMN annotations TEXT DEFAULT NULL');
     log.info('Migrated: added annotations column');
   }
+  if (!columnNames.has('name')) {
+    db.exec('ALTER TABLE snaps ADD COLUMN name TEXT DEFAULT NULL');
+    log.info('Migrated: added name column');
+  }
   if (!columnNames.has('thumbnailUpdatedAt')) {
     db.exec(
       'ALTER TABLE snaps ADD COLUMN thumbnailUpdatedAt TEXT DEFAULT NULL',
@@ -68,8 +74,8 @@ export function initDatabase(): void {
 
 export function insertSnap(snap: SnapRecord): void {
   const stmt = db.prepare(`
-    INSERT INTO snaps (id, filePath, thumbPath, sourceApp, width, height, posX, posY, opacity, hasShadow, isOpen, createdAt, annotations, thumbnailUpdatedAt)
-    VALUES (@id, @filePath, @thumbPath, @sourceApp, @width, @height, @posX, @posY, @opacity, @hasShadow, @isOpen, @createdAt, @annotations, @thumbnailUpdatedAt)
+    INSERT INTO snaps (id, name, filePath, thumbPath, sourceApp, width, height, posX, posY, opacity, hasShadow, isOpen, createdAt, annotations, thumbnailUpdatedAt)
+    VALUES (@id, @name, @filePath, @thumbPath, @sourceApp, @width, @height, @posX, @posY, @opacity, @hasShadow, @isOpen, @createdAt, @annotations, @thumbnailUpdatedAt)
   `);
   stmt.run(snap);
 }
@@ -79,6 +85,7 @@ export function updateSnap(
   fields: Partial<
     Pick<
       SnapRecord,
+      | 'name'
       | 'posX'
       | 'posY'
       | 'opacity'
@@ -127,8 +134,8 @@ export function duplicateSnap(
   newThumbPath: string,
 ): void {
   const stmt = db.prepare(`
-    INSERT INTO snaps (id, filePath, thumbPath, sourceApp, width, height, posX, posY, opacity, hasShadow, isOpen, createdAt, annotations, thumbnailUpdatedAt)
-    SELECT @newId, @newFilePath, @newThumbPath, sourceApp, width, height, NULL, NULL, 1.0, 1, 1, createdAt, annotations, thumbnailUpdatedAt
+    INSERT INTO snaps (id, name, filePath, thumbPath, sourceApp, width, height, posX, posY, opacity, hasShadow, isOpen, createdAt, annotations, thumbnailUpdatedAt)
+    SELECT @newId, name, @newFilePath, @newThumbPath, sourceApp, width, height, NULL, NULL, 1.0, 1, 1, createdAt, annotations, thumbnailUpdatedAt
     FROM snaps WHERE id = @originalId
   `);
   stmt.run({ originalId, newId, newFilePath, newThumbPath });

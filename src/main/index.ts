@@ -19,10 +19,7 @@ import {
   WINDOW_CONFIG,
 } from '../shared/constants';
 import { EVENTS } from '../shared/events';
-import {
-  notifyBrowserUpdated,
-  openBrowserWindow,
-} from './browser-window';
+import { notifyBrowserUpdated, openBrowserWindow } from './browser-window';
 import { captureScreen } from './capture';
 import {
   closeDatabase,
@@ -295,14 +292,10 @@ function createMenubar() {
       let thumbHeight: number;
       if (size.width >= size.height) {
         thumbWidth = THUMBNAIL_SIZE;
-        thumbHeight = Math.round(
-          (THUMBNAIL_SIZE / size.width) * size.height,
-        );
+        thumbHeight = Math.round((THUMBNAIL_SIZE / size.width) * size.height);
       } else {
         thumbHeight = THUMBNAIL_SIZE;
-        thumbWidth = Math.round(
-          (THUMBNAIL_SIZE / size.height) * size.width,
-        );
+        thumbWidth = Math.round((THUMBNAIL_SIZE / size.height) * size.width);
       }
       const thumb = image.resize({ width: thumbWidth, height: thumbHeight });
 
@@ -322,6 +315,14 @@ function createMenubar() {
   ipcMain.handle(EVENTS.LIBRARY_GET_SNAPS, () => {
     return getAllSnaps();
   });
+
+  ipcMain.handle(
+    EVENTS.LIBRARY_RENAME_SNAP,
+    (_event, snapId: string, name: string | null) => {
+      updateSnap(snapId, { name: name || null });
+      notifyTrayUpdated();
+    },
+  );
 
   ipcMain.handle(EVENTS.LIBRARY_OPEN_SNAP, (_event, snapId: string) => {
     const snap = getSnap(snapId);
@@ -454,6 +455,7 @@ function registerGlobalShortcut() {
     if (result) {
       insertSnap({
         id: result.id,
+        name: null,
         filePath: result.filePath,
         thumbPath: result.thumbPath,
         sourceApp: result.sourceApp,

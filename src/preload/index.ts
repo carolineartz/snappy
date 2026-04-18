@@ -77,6 +77,8 @@ const snappyAPI = {
       ipcRenderer.invoke(EVENTS.LIBRARY_OPEN_SNAP, snapId),
     deleteSnap: (snapId: string) =>
       ipcRenderer.invoke(EVENTS.LIBRARY_DELETE_SNAP, snapId),
+    renameSnap: (snapId: string, name: string | null) =>
+      ipcRenderer.invoke(EVENTS.LIBRARY_RENAME_SNAP, snapId, name),
     readThumbnail: (thumbPath: string) =>
       ipcRenderer.invoke(EVENTS.LIBRARY_READ_THUMBNAIL, thumbPath) as Promise<
         string | null

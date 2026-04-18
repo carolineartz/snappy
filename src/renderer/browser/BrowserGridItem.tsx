@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { SnapItem } from '../types';
 
 interface BrowserGridItemProps {
@@ -9,12 +9,9 @@ interface BrowserGridItemProps {
   onDuplicate: (snapId: string) => void;
 }
 
-function formatTime(isoString: string): string {
-  const date = new Date(isoString);
-  return date.toLocaleTimeString(undefined, {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+function displayName(snap: SnapItem): string {
+  if (snap.name) return snap.name;
+  return snap.sourceApp || 'Other';
 }
 
 export function BrowserGridItem({
@@ -30,8 +27,10 @@ export function BrowserGridItem({
     x: number;
     y: number;
   } | null>(null);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+  const renameRef = useRef<HTMLInputElement>(null);
 
-  // Load thumbnail first (fast), then replace with full image for sharpness at any zoom
   useEffect(() => {
     let cancelled = false;
     window.snappy.library.readThumbnail(snap.thumbPath).then((src) => {
@@ -57,48 +56,93 @@ export function BrowserGridItem({
     setContextMenu({ x: e.clientX, y: e.clientY });
   };
 
+  const startRename = () => {
+    setRenameValue(snap.name || '');
+    setIsRenaming(true);
+    setTimeout(() => renameRef.current?.select(), 0);
+  };
+
+  const commitRename = () => {
+    const trimmed = renameValue.trim();
+    window.snappy.library.renameSnap(snap.id, trimmed || null);
+    setIsRenaming(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'F2' && !isRenaming) {
+      e.preventDefault();
+      startRename();
+    }
+  };
+
   const imgSrc = fullSrc ?? thumbSrc;
 
   return (
     <>
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: grid item with double-click */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: grid item with interactions */}
+      {/* biome-ignore lint/a11y/noNoninteractiveTabindex: need focus for F2 rename */}
       <div
-        className="group relative flex cursor-default items-center justify-center overflow-hidden rounded bg-neutral-100 ring-1 ring-black/[0.06]"
-        style={{ width: size, height: size }}
+        className="group relative flex cursor-default flex-col overflow-hidden rounded outline-none"
+        style={{ width: size }}
         onDoubleClick={handleDoubleClick}
         onContextMenu={handleContextMenu}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
       >
-        {imgSrc ? (
-          <img
-            src={imgSrc}
-            alt=""
-            className="max-h-full max-w-full object-contain"
-            draggable={false}
-          />
-        ) : (
-          <div className="h-full w-full bg-neutral-200" />
-        )}
+        {/* Image container */}
+        <div
+          className="flex items-center justify-center bg-neutral-100 ring-1 ring-black/[0.06]"
+          style={{ width: size, height: size }}
+        >
+          {imgSrc ? (
+            <img
+              src={imgSrc}
+              alt=""
+              className="max-h-full max-w-full object-contain"
+              draggable={false}
+            />
+          ) : (
+            <div className="h-full w-full bg-neutral-200" />
+          )}
 
-        {/* Green dot for open snaps */}
-        {snap.isOpen === 1 && (
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-green-400 shadow-sm shadow-green-400/50" />
-        )}
+          {/* Green dot for open snaps */}
+          {snap.isOpen === 1 && (
+            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-green-400 shadow-sm shadow-green-400/50" />
+          )}
 
-        {/* Annotation indicator */}
-        {hasAnnotations && (
-          <span className="absolute top-1.5 left-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500/80 text-[8px] text-white">
-            ✏
-          </span>
-        )}
+          {/* Annotation indicator */}
+          {hasAnnotations && (
+            <span className="absolute top-1.5 left-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500/80 text-[8px] text-white">
+              ✏
+            </span>
+          )}
+        </div>
 
-        {/* Hover overlay with metadata */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-full bg-gradient-to-t from-black/80 to-transparent px-2 pt-6 pb-1.5 transition-transform duration-150 group-hover:translate-y-0">
-          <p className="truncate text-[11px] font-medium text-white">
-            {snap.sourceApp || 'Other'}
-          </p>
-          <p className="text-[10px] text-neutral-300">
-            {formatTime(snap.createdAt)} · {snap.width}×{snap.height}
-          </p>
+        {/* Label below thumbnail */}
+        <div className="px-0.5 py-1">
+          {isRenaming ? (
+            <input
+              ref={renameRef}
+              type="text"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onBlur={commitRename}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitRename();
+                if (e.key === 'Escape') setIsRenaming(false);
+                e.stopPropagation();
+              }}
+              className="w-full rounded border border-blue-400 bg-white px-1 py-0.5 text-center text-[11px] text-neutral-800 outline-none"
+              placeholder={snap.sourceApp || 'Untitled'}
+            />
+          ) : (
+            <p
+              className="truncate text-center text-[11px] text-neutral-500"
+              title={displayName(snap)}
+            >
+              {displayName(snap)}
+            </p>
+          )}
         </div>
       </div>
 
@@ -126,6 +170,13 @@ export function BrowserGridItem({
               onClick={() => {
                 onOpen(snap.id);
                 setContextMenu(null);
+              }}
+            />
+            <ContextMenuItem
+              label="Rename"
+              onClick={() => {
+                setContextMenu(null);
+                startRename();
               }}
             />
             <ContextMenuItem
