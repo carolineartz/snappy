@@ -7,9 +7,9 @@ import {
   addTagToSnap,
   deleteSnap,
   getAllSnaps,
-  getAllTags,
+  getAllTagsWithUsageCount,
   getSnap,
-  getTagsForSnap,
+  getTagNamesForSnap,
   removeTagFromSnap,
   updateSnap,
 } from '../database';
@@ -25,9 +25,7 @@ const icns = require('electron-icns-ex');
 
 const appIconCache = new Map<string, string | null>();
 
-export function registerLibraryHandlers(
-  notifyTrayUpdated: () => void,
-): void {
+export function registerLibraryHandlers(notifyTrayUpdated: () => void): void {
   // Duplicate
   ipcMain.handle(EVENTS.SNAP_DUPLICATE, (_event, snapId: string) => {
     handleDuplicate(snapId);
@@ -58,11 +56,11 @@ export function registerLibraryHandlers(
   });
 
   ipcMain.handle(EVENTS.TAG_GET_FOR_SNAP, (_event, snapId: string) => {
-    return getTagsForSnap(snapId);
+    return getTagNamesForSnap(snapId);
   });
 
   ipcMain.handle(EVENTS.TAG_GET_ALL, () => {
-    return getAllTags();
+    return getAllTagsWithUsageCount();
   });
 
   // Open / delete

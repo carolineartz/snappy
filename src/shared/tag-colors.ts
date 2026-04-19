@@ -1,14 +1,15 @@
+export type TagName = string;
 export type HexColor = `#${string}`;
 export type TagColorSource = 'auto' | 'custom';
 
-export interface TagColorRecord {
+export interface Tag {
+  name: TagName;
   color: HexColor | null;
   colorSource: TagColorSource | null;
 }
 
-export interface TagColorAssignment {
-  baseColor: HexColor;
-  colorSource: 'auto';
+export interface TagWithUsageCount extends Tag {
+  usageCount: number;
 }
 
 export interface TagColorStyles {
@@ -16,13 +17,6 @@ export interface TagColorStyles {
   pillBackground: HexColor;
   pillBorder: HexColor;
   pillText: HexColor;
-}
-
-export interface TagSummary {
-  tag: string;
-  count: number;
-  color: HexColor | null;
-  colorSource: TagColorSource | null;
 }
 
 interface RGB {
@@ -39,13 +33,18 @@ interface HSL {
 
 const DEFAULT_CANDIDATE_COUNT = 36;
 
-/**
- * Public API: Assign a new auto-generated color
- */
+/* =========================
+   Public API
+   ========================= */
+
 export function assignAutoTagColor(
-  existingAutoColors: HexColor[],
+  existingTags: Tag[],
   candidateCount = DEFAULT_CANDIDATE_COUNT,
-): TagColorAssignment {
+): { baseColor: HexColor; colorSource: 'auto' } {
+  const existingAutoColors = existingTags
+    .filter((t) => t.colorSource === 'auto' && t.color)
+    .map((t) => normalizeHex(t.color!));
+
   if (existingAutoColors.length === 0) {
     return {
       baseColor: randomPleasantColor(),
@@ -67,7 +66,6 @@ export function assignAutoTagColor(
     );
 
     const luminance = relativeLuminance(candidateRgb);
-
     const flexibilityBonus = 1 - Math.abs(luminance - 0.5);
 
     const score = minDistance + flexibilityBonus * 20;
@@ -84,23 +82,6 @@ export function assignAutoTagColor(
   };
 }
 
-/**
- * Extract only auto-generated colors from DB rows
- */
-export function extractExistingAutoColors(
-  tags: TagColorRecord[],
-): HexColor[] {
-  return tags
-    .filter(
-      (t): t is { color: HexColor; colorSource: 'auto' } =>
-        t.colorSource === 'auto' && typeof t.color === 'string',
-    )
-    .map((t) => normalizeHex(t.color));
-}
-
-/**
- * Derive UI-friendly colors from base color
- */
 export function getTagColorStyles(baseColor: HexColor): TagColorStyles {
   const baseHsl = rgbToHsl(hexToRgb(baseColor));
 
@@ -124,10 +105,7 @@ export function getTagColorStyles(baseColor: HexColor): TagColorStyles {
     l: 24,
   });
 
-  const pillText = pickReadableTextColor(
-    pillBackground,
-    hueMatchedDarkText,
-  );
+  const pillText = pickReadableTextColor(pillBackground, hueMatchedDarkText);
 
   return {
     dotColor,
@@ -151,19 +129,16 @@ function randomPleasantColor(): HexColor {
   return hslToHex({ h, s, l });
 }
 
-/**
- * Slightly curated hue buckets to avoid weird muddy zones
- */
 function randomHueBucket(): [number, number] {
   const buckets: Array<[number, number]> = [
-    [0, 20],    // red
-    [25, 50],   // orange
-    [55, 75],   // yellow
-    [85, 140],  // green
-    [160, 210], // cyan/blue
-    [220, 265], // indigo
-    [275, 320], // purple/pink
-    [330, 355], // rose
+    [0, 20],
+    [25, 50],
+    [55, 75],
+    [85, 140],
+    [160, 210],
+    [220, 265],
+    [275, 320],
+    [330, 355],
   ];
 
   return buckets[Math.floor(Math.random() * buckets.length)];
@@ -182,9 +157,7 @@ function pickReadableTextColor(
   const blackContrast = contrastRatio(bg, black);
   const whiteContrast = contrastRatio(bg, white);
 
-  if (preferredContrast >= 4.5) {
-    return preferredHex;
-  }
+  if (preferredContrast >= 4.5) return preferredHex;
 
   return blackContrast >= whiteContrast ? '#111111' : '#FFFFFF';
 }
@@ -193,13 +166,11 @@ function colorDistance(a: RGB, b: RGB): number {
   const dr = a.r - b.r;
   const dg = a.g - b.g;
   const db = a.b - b.b;
-
   return Math.sqrt(2 * dr * dr + 4 * dg * dg + 3 * db * db);
 }
 
 function hexToRgb(hex: string): RGB {
   const normalized = normalizeHex(hex).slice(1);
-
   return {
     r: parseInt(normalized.slice(0, 2), 16),
     g: parseInt(normalized.slice(2, 4), 16),
@@ -227,26 +198,14 @@ function rgbToHsl({ r, g, b }: RGB): HSL {
   if (delta !== 0) {
     s = delta / (1 - Math.abs(2 * l - 1));
 
-    switch (max) {
-      case rn:
-        h = 60 * (((gn - bn) / delta) % 6);
-        break;
-      case gn:
-        h = 60 * ((bn - rn) / delta + 2);
-        break;
-      default:
-        h = 60 * ((rn - gn) / delta + 4);
-        break;
-    }
+    if (max === rn) h = 60 * (((gn - bn) / delta) % 6);
+    else if (max === gn) h = 60 * ((bn - rn) / delta + 2);
+    else h = 60 * ((rn - gn) / delta + 4);
   }
 
   if (h < 0) h += 360;
 
-  return {
-    h,
-    s: s * 100,
-    l: l * 100,
-  };
+  return { h, s: s * 100, l: l * 100 };
 }
 
 function hslToHex({ h, s, l }: HSL): HexColor {
@@ -257,9 +216,9 @@ function hslToHex({ h, s, l }: HSL): HexColor {
   const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
   const m = ln - c / 2;
 
-  let rPrime = 0;
-  let gPrime = 0;
-  let bPrime = 0;
+  let rPrime = 0,
+    gPrime = 0,
+    bPrime = 0;
 
   if (h < 60) {
     rPrime = c;
@@ -300,11 +259,7 @@ function relativeLuminance({ r, g, b }: RGB): number {
 function contrastRatio(a: RGB, b: RGB): number {
   const l1 = relativeLuminance(a);
   const l2 = relativeLuminance(b);
-
-  const lighter = Math.max(l1, l2);
-  const darker = Math.min(l1, l2);
-
-  return (lighter + 0.05) / (darker + 0.05);
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
 }
 
 export function normalizeHex(hex: string): HexColor {
@@ -323,10 +278,7 @@ export function normalizeHex(hex: string): HexColor {
 }
 
 function toHex(value: number): string {
-  return clamp(Math.round(value), 0, 255)
-    .toString(16)
-    .padStart(2, '0')
-    .toUpperCase();
+  return Math.round(value).toString(16).padStart(2, '0').toUpperCase();
 }
 
 function randomBetween(min: number, max: number): number {

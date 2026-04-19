@@ -1,43 +1,42 @@
-import { getTagColorStyles, TagSummary } from "../../../shared/tag-colors";
-
+import type { Tag } from '../../../shared/tag-colors';
+import { getTagColorStyles } from '../../../shared/tag-colors';
 
 interface TagItemProps {
   tag: string;
-  getTagRecord: (tag: string) => TagSummary | undefined;
-  removeTag: (tag: string) => void;
+  getTagRecord: (tag: string) => Tag | undefined;
+  selected?: boolean;
+  onClick?: () => void;
 }
 
-export function TagItem({ tag, getTagRecord, removeTag }: TagItemProps) {
+export function TagItem({
+  tag,
+  getTagRecord,
+  selected,
+  onClick,
+}: TagItemProps) {
   const tagRecord = getTagRecord(tag);
-  const styles = tagRecord?.color
-    ? getTagColorStyles(tagRecord.color)
-    : null;
+  const styles = tagRecord?.color ? getTagColorStyles(tagRecord.color) : null;
 
   return (
-    <span
-      className="inline-flex items-center rounded-full px-1.5 py-0 text-[9px]"
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick?.();
+      }}
+      className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium transition-all ${
+        selected ? '' : 'hover:opacity-85'
+      }`}
       style={{
         backgroundColor: styles?.pillBackground ?? '#EFF6FF',
         color: styles?.pillText ?? '#2563EB',
         border: `1px solid ${styles?.pillBorder ?? '#BFDBFE'}`,
+        boxShadow: selected
+          ? `0 0 0 2px ${styles?.pillText ?? '#2563EB'}`
+          : undefined,
       }}
     >
-      <span
-        className="mr-1 inline-block h-1.5 w-1.5 rounded-full"
-        style={{ backgroundColor: styles?.dotColor ?? '#3B82F6' }}
-      />
       {tag}
-      <button
-        type="button"
-        className="ml-0.5 hover:opacity-80"
-        style={{ color: styles?.pillText ?? '#2563EB' }}
-        onClick={(e) => {
-          e.stopPropagation();
-          removeTag(tag);
-        }}
-      >
-        ×
-      </button>
-    </span>
+    </button>
   );
 }

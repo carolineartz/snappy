@@ -1,8 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SnapGridItem } from './SnapGridItem';
 import type { SnapItem } from '../../types';
+import { SnapGridItem } from './SnapGridItem';
 
 function makeSnap(overrides: Partial<SnapItem> = {}): SnapItem {
   return {

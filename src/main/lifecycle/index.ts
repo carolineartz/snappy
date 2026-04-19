@@ -1,1 +1,5 @@
-export { createMenubar, getNotifyTrayUpdated, registerGlobalShortcut } from './tray';
+export {
+  createMenubar,
+  getNotifyTrayUpdated,
+  registerGlobalShortcut,
+} from './tray';

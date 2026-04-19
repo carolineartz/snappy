@@ -2,7 +2,11 @@ import path from 'node:path';
 import { app, BrowserWindow, globalShortcut } from 'electron';
 import log from 'electron-log';
 import { menubar } from 'menubar';
-import { APP_NAME, CAPTURE_SHORTCUT, WINDOW_CONFIG } from '../../shared/constants';
+import {
+  APP_NAME,
+  CAPTURE_SHORTCUT,
+  WINDOW_CONFIG,
+} from '../../shared/constants';
 import { EVENTS } from '../../shared/events';
 import { notifyBrowserUpdated } from '../browser-window';
 import { captureScreen } from '../capture';
@@ -10,7 +14,11 @@ import { createTrayIcon } from '../config';
 import { insertSnap } from '../database';
 import { registerAllHandlers } from '../handlers';
 import { getMenuWindow } from '../menu-window';
-import { createSnapWindow, getSnapWindows, setOnSnapWindowClosed } from '../snap-window';
+import {
+  createSnapWindow,
+  getSnapWindows,
+  setOnSnapWindowClosed,
+} from '../snap-window';
 
 const isDev = !!process.env.VITE_DEV_SERVER_URL;
 

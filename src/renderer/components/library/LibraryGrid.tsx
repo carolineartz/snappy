@@ -1,4 +1,4 @@
-import type { TagSummary } from '../../../shared/tag-colors';
+import type { Tag, TagWithUsageCount } from '../../../shared/tag-colors';
 import type { SnapItem } from '../../types';
 import { LibraryGridItem } from './LibraryGridItem';
 
@@ -6,7 +6,8 @@ interface LibraryGridProps {
   snaps: SnapItem[];
   zoom: number;
   snapTags: Map<string, string[]>;
-  getTagRecord: (tag: string) => TagSummary | undefined;
+  allTags: TagWithUsageCount[];
+  getTagRecord: (tag: string) => Tag | undefined;
   onOpen: (snapId: string) => void;
   onDelete: (snapId: string) => void;
   onDuplicate: (snapId: string) => void;
@@ -65,6 +66,7 @@ export function LibraryGrid({
   snaps,
   zoom,
   snapTags,
+  allTags,
   getTagRecord,
   onOpen,
   onDelete,
@@ -95,6 +97,7 @@ export function LibraryGrid({
                 snap={snap}
                 size={zoom}
                 tags={snapTags.get(snap.id) || []}
+                allTags={allTags}
                 getTagRecord={getTagRecord}
                 onOpen={onOpen}
                 onDelete={onDelete}

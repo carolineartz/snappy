@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { Tag, TagWithUsageCount } from '../../../shared/tag-colors';
 import type { SnapItem } from '../../types';
+import { FilterPanel } from './FilterPanel';
 import { LibraryGrid } from './LibraryGrid';
 import { LibraryHeader } from './LibraryHeader';
-import { FilterPanel } from './FilterPanel';
 
 export type TimeFilter = 'all' | '24h' | '7d' | '30d';
 export type SortDirection = 'desc' | 'asc';
@@ -32,7 +33,7 @@ export function LibraryApp() {
   const [selectedApp, setSelectedApp] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [allTags, setAllTags] = useState<{ tag: string; count: number }[]>([]);
+  const [allTags, setAllTags] = useState<TagWithUsageCount[]>([]);
   const [snapTags, setSnapTags] = useState<Map<string, string[]>>(new Map());
   const [zoom, setZoom] = useState<number>(() => {
     const stored = localStorage.getItem(ZOOM_STORAGE_KEY);
@@ -77,6 +78,16 @@ export function LibraryApp() {
       loadTags();
     });
   }, [loadSnaps, loadTags]);
+
+  // Lookup map: tag name → Tag record with color metadata
+  const tagRecordMap = useMemo(
+    () => new Map<string, Tag>(allTags.map((t) => [t.name, t])),
+    [allTags],
+  );
+  const getTagRecord = useCallback(
+    (tag: string) => tagRecordMap.get(tag),
+    [tagRecordMap],
+  );
 
   // Derive source apps with counts from the full snap list
   const sourceApps = useMemo(() => {
@@ -168,7 +179,8 @@ export function LibraryApp() {
               snaps={filteredSnaps}
               zoom={zoom}
               snapTags={snapTags}
-              getTagRecord={() => undefined}
+              allTags={allTags}
+              getTagRecord={getTagRecord}
               onOpen={handleOpen}
               onDelete={handleDelete}
               onDuplicate={handleDuplicate}

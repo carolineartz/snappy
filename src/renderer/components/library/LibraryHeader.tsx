@@ -1,6 +1,6 @@
+import { GridIcon, SortIcon } from '../icons';
 import type { SortDirection } from './LibraryApp';
 import { ZOOM_MAX, ZOOM_MIN } from './LibraryApp';
-import { GridIcon, SortIcon } from '../icons';
 
 interface LibraryHeaderProps {
   sortDirection: SortDirection;

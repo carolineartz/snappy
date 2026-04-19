@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { AnnotationTool } from '../shared/annotation-types';
 import { EVENTS } from '../shared/events';
+import type { TagWithUsageCount } from '../shared/tag-colors';
 
 interface MenuOpenParams {
   screenX: number;
@@ -94,9 +95,7 @@ const snappyAPI = {
     getTagsForSnap: (snapId: string) =>
       ipcRenderer.invoke(EVENTS.TAG_GET_FOR_SNAP, snapId) as Promise<string[]>,
     getAllTags: () =>
-      ipcRenderer.invoke(EVENTS.TAG_GET_ALL) as Promise<
-        { tag: string; count: number }[]
-      >,
+      ipcRenderer.invoke(EVENTS.TAG_GET_ALL) as Promise<TagWithUsageCount[]>,
     getAppIcon: (appName: string) =>
       ipcRenderer.invoke(EVENTS.GET_APP_ICON, appName) as Promise<
         string | null

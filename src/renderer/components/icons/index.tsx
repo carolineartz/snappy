@@ -16,6 +16,19 @@ export const PointerIcon = () => (
   </svg>
 );
 
+export const SearchIcon = () => (
+  <svg {...iconProps}>
+    <circle cx="7" cy="7" r="4.5" />
+    <path d="M10.5 10.5 L13.5 13.5" />
+  </svg>
+);
+
+export const ChevronDownIcon = () => (
+  <svg {...iconProps}>
+    <path d="M4 6 L8 10 L12 6" />
+  </svg>
+);
+
 export const PencilIcon = () => (
   <svg {...iconProps}>
     <path d="M10 2 L14 6 L6 14 L2 14 L2 10 Z" />

@@ -2,6 +2,15 @@ import path from 'node:path';
 import Database from 'better-sqlite3';
 import { app } from 'electron';
 import log from 'electron-log';
+import {
+  assignAutoTagColor,
+  type HexColor,
+  normalizeHex,
+  type Tag,
+  type TagColorSource,
+  type TagName,
+  type TagWithUsageCount,
+} from '../shared/tag-colors';
 
 let db: Database.Database;
 
@@ -51,25 +60,26 @@ export function initDatabase(): void {
   `);
 
   // Migrations for existing databases
-  const columns = db.pragma('table_info(snaps)') as { name: string }[];
-  const columnNames = new Set(columns.map((col) => col.name));
+  const snapColumns = db.pragma('table_info(snaps)') as { name: string }[];
+  const snapColumnNames = new Set(snapColumns.map((column) => column.name));
 
-  if (!columnNames.has('annotations')) {
+  if (!snapColumnNames.has('annotations')) {
     db.exec('ALTER TABLE snaps ADD COLUMN annotations TEXT DEFAULT NULL');
     log.info('Migrated: added annotations column');
   }
-  if (!columnNames.has('name')) {
+
+  if (!snapColumnNames.has('name')) {
     db.exec('ALTER TABLE snaps ADD COLUMN name TEXT DEFAULT NULL');
     log.info('Migrated: added name column');
   }
-  if (!columnNames.has('thumbnailUpdatedAt')) {
+
+  if (!snapColumnNames.has('thumbnailUpdatedAt')) {
     db.exec(
       'ALTER TABLE snaps ADD COLUMN thumbnailUpdatedAt TEXT DEFAULT NULL',
     );
     log.info('Migrated: added thumbnailUpdatedAt column');
   }
 
-  // Tags table
   db.exec(`
     CREATE TABLE IF NOT EXISTS snap_tags (
       snap_id  TEXT NOT NULL,
@@ -78,17 +88,74 @@ export function initDatabase(): void {
       FOREIGN KEY (snap_id) REFERENCES snaps(id) ON DELETE CASCADE
     )
   `);
+
   db.exec('CREATE INDEX IF NOT EXISTS idx_snap_tags_tag ON snap_tags(tag)');
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tags (
+      tag         TEXT PRIMARY KEY,
+      color       TEXT DEFAULT NULL,
+      colorSource TEXT DEFAULT NULL CHECK (colorSource IN ('auto', 'custom'))
+    )
+  `);
+
+  const tagColumns = db.pragma('table_info(tags)') as { name: string }[];
+  const tagColumnNames = new Set(tagColumns.map((column) => column.name));
+
+  if (!tagColumnNames.has('color')) {
+    db.exec('ALTER TABLE tags ADD COLUMN color TEXT DEFAULT NULL');
+    log.info('Migrated: added color column to tags');
+  }
+
+  if (!tagColumnNames.has('colorSource')) {
+    db.exec(
+      "ALTER TABLE tags ADD COLUMN colorSource TEXT DEFAULT NULL CHECK (colorSource IN ('auto', 'custom'))",
+    );
+    log.info('Migrated: added colorSource column to tags');
+  }
 
   log.info(`Database initialized at ${dbPath}`);
 }
 
 export function insertSnap(snap: SnapRecord): void {
-  const stmt = db.prepare(`
-    INSERT INTO snaps (id, name, filePath, thumbPath, sourceApp, width, height, posX, posY, opacity, hasShadow, isOpen, createdAt, annotations, thumbnailUpdatedAt)
-    VALUES (@id, @name, @filePath, @thumbPath, @sourceApp, @width, @height, @posX, @posY, @opacity, @hasShadow, @isOpen, @createdAt, @annotations, @thumbnailUpdatedAt)
+  const statement = db.prepare(`
+    INSERT INTO snaps (
+      id,
+      name,
+      filePath,
+      thumbPath,
+      sourceApp,
+      width,
+      height,
+      posX,
+      posY,
+      opacity,
+      hasShadow,
+      isOpen,
+      createdAt,
+      annotations,
+      thumbnailUpdatedAt
+    )
+    VALUES (
+      @id,
+      @name,
+      @filePath,
+      @thumbPath,
+      @sourceApp,
+      @width,
+      @height,
+      @posX,
+      @posY,
+      @opacity,
+      @hasShadow,
+      @isOpen,
+      @createdAt,
+      @annotations,
+      @thumbnailUpdatedAt
+    )
   `);
-  stmt.run(snap);
+
+  statement.run(snap);
 }
 
 export function updateSnap(
@@ -107,35 +174,42 @@ export function updateSnap(
     >
   >,
 ): void {
-  const sets: string[] = [];
+  const assignments: string[] = [];
   const values: Record<string, unknown> = { id };
 
-  for (const [key, value] of Object.entries(fields)) {
+  for (const [fieldName, value] of Object.entries(fields)) {
     if (value !== undefined) {
-      sets.push(`${key} = @${key}`);
-      values[key] = value;
+      assignments.push(`${fieldName} = @${fieldName}`);
+      values[fieldName] = value;
     }
   }
 
-  if (sets.length === 0) return;
+  if (assignments.length === 0) {
+    return;
+  }
 
-  const stmt = db.prepare(`UPDATE snaps SET ${sets.join(', ')} WHERE id = @id`);
-  stmt.run(values);
+  const statement = db.prepare(`
+    UPDATE snaps
+    SET ${assignments.join(', ')}
+    WHERE id = @id
+  `);
+
+  statement.run(values);
 }
 
 export function getSnap(id: string): SnapRecord | undefined {
-  const stmt = db.prepare('SELECT * FROM snaps WHERE id = ?');
-  return stmt.get(id) as SnapRecord | undefined;
+  const statement = db.prepare('SELECT * FROM snaps WHERE id = ?');
+  return statement.get(id) as SnapRecord | undefined;
 }
 
 export function getAllSnaps(): SnapRecord[] {
-  const stmt = db.prepare('SELECT * FROM snaps ORDER BY createdAt DESC');
-  return stmt.all() as SnapRecord[];
+  const statement = db.prepare('SELECT * FROM snaps ORDER BY createdAt DESC');
+  return statement.all() as SnapRecord[];
 }
 
 export function deleteSnap(id: string): void {
-  const stmt = db.prepare('DELETE FROM snaps WHERE id = ?');
-  stmt.run(id);
+  const statement = db.prepare('DELETE FROM snaps WHERE id = ?');
+  statement.run(id);
 }
 
 export function duplicateSnap(
@@ -144,47 +218,167 @@ export function duplicateSnap(
   newFilePath: string,
   newThumbPath: string,
 ): void {
-  const stmt = db.prepare(`
-    INSERT INTO snaps (id, name, filePath, thumbPath, sourceApp, width, height, posX, posY, opacity, hasShadow, isOpen, createdAt, annotations, thumbnailUpdatedAt)
-    SELECT @newId, name, @newFilePath, @newThumbPath, sourceApp, width, height, NULL, NULL, 1.0, 1, 1, createdAt, annotations, thumbnailUpdatedAt
-    FROM snaps WHERE id = @originalId
+  const statement = db.prepare(`
+    INSERT INTO snaps (
+      id,
+      name,
+      filePath,
+      thumbPath,
+      sourceApp,
+      width,
+      height,
+      posX,
+      posY,
+      opacity,
+      hasShadow,
+      isOpen,
+      createdAt,
+      annotations,
+      thumbnailUpdatedAt
+    )
+    SELECT
+      @newId,
+      name,
+      @newFilePath,
+      @newThumbPath,
+      sourceApp,
+      width,
+      height,
+      NULL,
+      NULL,
+      1.0,
+      1,
+      1,
+      createdAt,
+      annotations,
+      thumbnailUpdatedAt
+    FROM snaps
+    WHERE id = @originalId
   `);
-  stmt.run({ originalId, newId, newFilePath, newThumbPath });
+
+  statement.run({ originalId, newId, newFilePath, newThumbPath });
 }
 
 // --- Tag operations ---
 
-export function getTagsForSnap(snapId: string): string[] {
-  const stmt = db.prepare('SELECT tag FROM snap_tags WHERE snap_id = ?');
-  const rows = stmt.all(snapId) as { tag: string }[];
-  return rows.map((r) => r.tag);
+export function getTag(name: TagName): Tag | undefined {
+  const statement = db.prepare(`
+    SELECT
+      tag AS name,
+      color,
+      colorSource
+    FROM tags
+    WHERE tag = ?
+  `);
+
+  return statement.get(name) as Tag | undefined;
 }
 
-export function addTagToSnap(snapId: string, tag: string): void {
-  const stmt = db.prepare(
-    'INSERT OR IGNORE INTO snap_tags (snap_id, tag) VALUES (?, ?)',
-  );
-  stmt.run(snapId, tag);
+export function getAllTagMetadata(): Tag[] {
+  const statement = db.prepare(`
+    SELECT
+      tag AS name,
+      color,
+      colorSource
+    FROM tags
+    ORDER BY tag
+  `);
+
+  return statement.all() as Tag[];
 }
 
-export function removeTagFromSnap(snapId: string, tag: string): void {
-  const stmt = db.prepare(
-    'DELETE FROM snap_tags WHERE snap_id = ? AND tag = ?',
-  );
-  stmt.run(snapId, tag);
+export function ensureTagExists(name: TagName): Tag {
+  const existingTag = getTag(name);
+
+  if (existingTag) {
+    return existingTag;
+  }
+
+  const assignedColor = assignAutoTagColor(getAllTagMetadata());
+
+  const statement = db.prepare(`
+    INSERT INTO tags (tag, color, colorSource)
+    VALUES (?, ?, ?)
+  `);
+
+  statement.run(name, assignedColor.baseColor, assignedColor.colorSource);
+
+  return getTag(name)!;
 }
 
-export function getAllTags(): { tag: string; count: number }[] {
-  const stmt = db.prepare(
-    'SELECT tag, COUNT(*) as count FROM snap_tags GROUP BY tag ORDER BY tag',
-  );
-  return stmt.all() as { tag: string; count: number }[];
+export function getTagNamesForSnap(snapId: string): TagName[] {
+  const statement = db.prepare(`
+    SELECT tag
+    FROM snap_tags
+    WHERE snap_id = ?
+    ORDER BY tag
+  `);
+
+  const rows = statement.all(snapId) as Array<{ tag: TagName }>;
+  return rows.map((row) => row.tag);
 }
 
-export function getSnapsWithTag(tag: string): string[] {
-  const stmt = db.prepare('SELECT snap_id FROM snap_tags WHERE tag = ?');
-  const rows = stmt.all(tag) as { snap_id: string }[];
-  return rows.map((r) => r.snap_id);
+export function addTagToSnap(snapId: string, tagName: TagName): void {
+  ensureTagExists(tagName);
+
+  const statement = db.prepare(`
+    INSERT OR IGNORE INTO snap_tags (snap_id, tag)
+    VALUES (?, ?)
+  `);
+
+  statement.run(snapId, tagName);
+}
+
+export function removeTagFromSnap(snapId: string, tagName: TagName): void {
+  const statement = db.prepare(`
+    DELETE FROM snap_tags
+    WHERE snap_id = ? AND tag = ?
+  `);
+
+  statement.run(snapId, tagName);
+}
+
+export function getAllTagsWithUsageCount(): TagWithUsageCount[] {
+  const statement = db.prepare(`
+    SELECT
+      st.tag AS name,
+      COUNT(*) AS usageCount,
+      t.color AS color,
+      t.colorSource AS colorSource
+    FROM snap_tags st
+    LEFT JOIN tags t ON t.tag = st.tag
+    GROUP BY st.tag
+    ORDER BY st.tag
+  `);
+
+  return statement.all() as TagWithUsageCount[];
+}
+
+export function getSnapIdsForTag(tagName: TagName): string[] {
+  const statement = db.prepare(`
+    SELECT snap_id
+    FROM snap_tags
+    WHERE tag = ?
+  `);
+
+  const rows = statement.all(tagName) as Array<{ snap_id: string }>;
+  return rows.map((row) => row.snap_id);
+}
+
+export function updateTagColor(
+  tagName: TagName,
+  color: HexColor,
+  colorSource: TagColorSource = 'custom',
+): void {
+  const normalizedColor = normalizeHex(color);
+
+  const statement = db.prepare(`
+    UPDATE tags
+    SET color = ?, colorSource = ?
+    WHERE tag = ?
+  `);
+
+  statement.run(normalizedColor, colorSource, tagName);
 }
 
 export function closeDatabase(): void {

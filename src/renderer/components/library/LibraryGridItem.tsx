@@ -1,18 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
-import type { TagSummary } from '../../../shared/tag-colors';
+import type { Tag, TagWithUsageCount } from '../../../shared/tag-colors';
+import { getTagColorStyles } from '../../../shared/tag-colors';
+import { useHoverDelay } from '../../hooks/useHoverDelay';
 import type { SnapItem } from '../../types';
-import { TagItem } from './TagItem';
+import { TagAssignPopover } from './TagAssignPopover';
 
 interface LibraryGridItemProps {
   snap: SnapItem;
   size: number;
   tags: string[];
+  allTags: TagWithUsageCount[];
+  getTagRecord: (tag: string) => Tag | undefined;
   onOpen: (snapId: string) => void;
   onDelete: (snapId: string) => void;
   onDuplicate: (snapId: string) => void;
   onTagsChanged: () => void;
-  getTagRecord: (tag: string) => TagSummary | undefined;
 }
+
+const MAX_DOTS = 3;
+const DOT_SIZE = 8;
+const DOT_OVERLAP = 3;
 
 function displayName(snap: SnapItem): string {
   if (snap.name) return snap.name;
@@ -23,6 +30,7 @@ export function LibraryGridItem({
   snap,
   size,
   tags,
+  allTags,
   getTagRecord,
   onOpen,
   onDelete,
@@ -37,10 +45,12 @@ export function LibraryGridItem({
   } | null>(null);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState('');
-  const [isAddingTag, setIsAddingTag] = useState(false);
-  const [tagValue, setTagValue] = useState('');
+  const [popoverAutoFocus, setPopoverAutoFocus] = useState(false);
+  const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
+  const itemRef = useRef<HTMLDivElement>(null);
   const renameRef = useRef<HTMLInputElement>(null);
-  const tagRef = useRef<HTMLInputElement>(null);
+
+  const popover = useHoverDelay({ openDelay: 500, closeDelay: 150 });
 
   useEffect(() => {
     let cancelled = false;
@@ -54,6 +64,13 @@ export function LibraryGridItem({
       cancelled = true;
     };
   }, [snap.filePath, snap.thumbPath, snap.thumbnailUpdatedAt]);
+
+  // When popover opens, capture the anchor rect for positioning
+  useEffect(() => {
+    if (popover.isOpen && itemRef.current) {
+      setAnchorRect(itemRef.current.getBoundingClientRect());
+    }
+  }, [popover.isOpen]);
 
   const hasAnnotations =
     snap.annotations !== null &&
@@ -79,24 +96,21 @@ export function LibraryGridItem({
     setIsRenaming(false);
   };
 
-  const startAddTag = () => {
-    setTagValue('');
-    setIsAddingTag(true);
-    setTimeout(() => tagRef.current?.focus(), 0);
-  };
-
-  const commitTag = () => {
-    const trimmed = tagValue.trim();
-    if (trimmed) {
-      window.snappy.library.addTag(snap.id, trimmed);
-      onTagsChanged();
+  const openAssignPopover = () => {
+    if (itemRef.current) {
+      setAnchorRect(itemRef.current.getBoundingClientRect());
     }
-    setIsAddingTag(false);
-    setTagValue('');
+    setPopoverAutoFocus(true);
+    popover.open();
   };
 
-  const removeTag = (tag: string) => {
-    window.snappy.library.removeTag(snap.id, tag);
+  const handleAssignTag = (snapId: string, name: string) => {
+    window.snappy.library.addTag(snapId, name);
+    onTagsChanged();
+  };
+
+  const handleUnassignTag = (snapId: string, name: string) => {
+    window.snappy.library.removeTag(snapId, name);
     onTagsChanged();
   };
 
@@ -107,25 +121,30 @@ export function LibraryGridItem({
     }
   };
 
+  // Sorted tags for stable dot rendering
+  const sortedTags = [...tags].sort();
+  const visibleDots = sortedTags.slice(0, MAX_DOTS);
+
   const imgSrc = fullSrc ?? thumbSrc;
-
-
 
   return (
     <>
       {/* biome-ignore lint/a11y/noStaticElementInteractions: grid item with interactions */}
       {/* biome-ignore lint/a11y/noNoninteractiveTabindex: need focus for F2 rename */}
       <div
+        ref={itemRef}
         className="group relative flex cursor-default flex-col overflow-hidden rounded outline-none"
         style={{ width: size }}
         onDoubleClick={handleDoubleClick}
         onContextMenu={handleContextMenu}
         onKeyDown={handleKeyDown}
+        onMouseEnter={popover.handleMouseEnter}
+        onMouseLeave={popover.handleMouseLeave}
         tabIndex={0}
       >
         {/* Image container */}
         <div
-          className="flex items-center justify-center bg-neutral-100 ring-1 ring-black/[0.06]"
+          className="relative flex items-center justify-center bg-neutral-100 ring-1 ring-black/[0.06]"
           style={{ width: size, height: size }}
         >
           {imgSrc ? (
@@ -139,12 +158,10 @@ export function LibraryGridItem({
             <div className="h-full w-full bg-neutral-200" />
           )}
 
-          {/* Green dot for open snaps */}
           {snap.isOpen === 1 && (
             <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-green-400 shadow-sm shadow-green-400/50" />
           )}
 
-          {/* Annotation indicator */}
           {hasAnnotations && (
             <span className="absolute top-1.5 left-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500/80 text-[8px] text-white">
               ✏
@@ -152,8 +169,37 @@ export function LibraryGridItem({
           )}
         </div>
 
-        {/* Label + tags below thumbnail */}
-        <div className="px-0.5 py-1">
+        {/* Label row: dots + name */}
+        <div className="flex items-center justify-center gap-1 px-0.5 py-1">
+          {visibleDots.length > 0 && (
+            <div
+              className="flex flex-shrink-0 items-center"
+              style={{
+                width:
+                  DOT_SIZE +
+                  (visibleDots.length - 1) * (DOT_SIZE - DOT_OVERLAP),
+              }}
+            >
+              {visibleDots.map((tag, idx) => {
+                const record = getTagRecord(tag);
+                const color = record?.color
+                  ? getTagColorStyles(record.color).dotColor
+                  : '#9ca3af';
+                return (
+                  <span
+                    key={tag}
+                    className="h-2 w-2 flex-shrink-0 rounded-full ring-1 ring-white"
+                    style={{
+                      backgroundColor: color,
+                      marginLeft: idx === 0 ? 0 : -DOT_OVERLAP,
+                      zIndex: visibleDots.length - idx,
+                    }}
+                  />
+                );
+              })}
+            </div>
+          )}
+
           {isRenaming ? (
             <input
               ref={renameRef}
@@ -166,54 +212,39 @@ export function LibraryGridItem({
                 if (e.key === 'Escape') setIsRenaming(false);
                 e.stopPropagation();
               }}
-              className="w-full rounded border border-blue-400 bg-white px-1 py-0.5 text-center text-[11px] text-neutral-800 outline-none"
+              className="min-w-0 flex-1 rounded border border-blue-400 bg-white px-1 py-0.5 text-center text-[11px] text-neutral-800 outline-none"
               placeholder={snap.sourceApp || 'Untitled'}
             />
           ) : (
             <p
-              className="truncate text-center text-[11px] text-neutral-500"
+              className="min-w-0 truncate text-center text-[11px] text-neutral-500"
               title={displayName(snap)}
             >
               {displayName(snap)}
             </p>
           )}
-
-          {/* Tags */}
-          {tags.length > 0 && (
-            <div className="mt-0.5 flex flex-wrap justify-center gap-0.5">
-              {tags.map((tag) => (
-                <TagItem
-                  key={tag}
-                  tag={tag}
-                  getTagRecord={getTagRecord}
-                  removeTag={removeTag}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Inline tag input */}
-          {isAddingTag && (
-            <input
-              ref={tagRef}
-              type="text"
-              value={tagValue}
-              onChange={(e) => setTagValue(e.target.value)}
-              onBlur={commitTag}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') commitTag();
-                if (e.key === 'Escape') {
-                  setIsAddingTag(false);
-                  setTagValue('');
-                }
-                e.stopPropagation();
-              }}
-              className="mt-0.5 w-full rounded border border-blue-400 bg-white px-1 py-0.5 text-center text-[10px] text-neutral-800 outline-none"
-              placeholder="tag name"
-            />
-          )}
         </div>
       </div>
+
+      {/* Hover popover */}
+      {popover.isOpen && anchorRect && (
+        <TagAssignPopover
+          snap={snap}
+          assignedTags={sortedTags}
+          allTags={allTags}
+          getTagRecord={getTagRecord}
+          anchorRect={anchorRect}
+          autoFocusInput={popoverAutoFocus}
+          onAssignTag={handleAssignTag}
+          onUnassignTag={handleUnassignTag}
+          onMouseEnter={popover.handleMouseEnter}
+          onMouseLeave={popover.handleMouseLeave}
+          onDismiss={() => {
+            popover.close();
+            setPopoverAutoFocus(false);
+          }}
+        />
+      )}
 
       {/* Context menu */}
       {contextMenu && (
@@ -252,7 +283,7 @@ export function LibraryGridItem({
               label="Add Tag..."
               onClick={() => {
                 setContextMenu(null);
-                startAddTag();
+                openAssignPopover();
               }}
             />
             <ContextMenuItem
