@@ -155,9 +155,6 @@ export function FilterPanel({
       ? filteredTags.slice(0, halfRows - 1)
       : filteredTags;
 
-  const appsFlex = isAppsExpanded ? 3 : isTagsExpanded ? 1 : 1;
-  const tagsFlex = isTagsExpanded ? 3 : isAppsExpanded ? 1 : 1;
-
   return (
     <div className="flex w-52 flex-shrink-0 flex-col border-r border-neutral-200 bg-neutral-50/80 pt-2">
       {/* Recent filters — fixed at top */}
@@ -189,13 +186,13 @@ export function FilterPanel({
 
       <div className="mx-3 border-t border-neutral-200" />
 
-      {/* Apps + Tags split region */}
-      <div ref={scrollRegionRef} className="flex min-h-0 flex-1 flex-col">
+      {/* Apps + Tags — shared scroll region, sections size to content */}
+      <div
+        ref={scrollRegionRef}
+        className="min-h-0 flex-1 overflow-y-auto"
+      >
         {/* Applications */}
-        <div
-          className="flex min-h-0 flex-col px-3 pt-2"
-          style={{ flex: appsFlex }}
-        >
+        <div className="px-3 pt-2">
           <FilterSectionTitle
             label="Applications"
             searchValue={appsSearch}
@@ -203,7 +200,7 @@ export function FilterPanel({
             searchOpen={appsSearchOpen}
             onToggleSearch={() => setAppsSearchOpen((v) => !v)}
           />
-          <ul className="mt-1 min-h-0 flex-1 overflow-y-auto">
+          <ul className="mt-1">
             {visibleApps.map(([appName, count]) => (
               <li key={appName}>
                 <FilterRow
@@ -242,13 +239,10 @@ export function FilterPanel({
           </ul>
         </div>
 
-        <div className="mx-3 border-t border-neutral-200" />
+        <div className="mx-3 mt-2 border-t border-neutral-200" />
 
         {/* Tags */}
-        <div
-          className="flex min-h-0 flex-col px-3 pt-2 pb-2"
-          style={{ flex: tagsFlex }}
-        >
+        <div className="px-3 pt-2 pb-2">
           <FilterSectionTitle
             label="Tags"
             searchValue={tagsSearch}
@@ -256,7 +250,7 @@ export function FilterPanel({
             searchOpen={tagsSearchOpen}
             onToggleSearch={() => setTagsSearchOpen((v) => !v)}
           />
-          <ul className="mt-1 min-h-0 flex-1 overflow-y-auto">
+          <ul className="mt-1">
             {allTags.length === 0 && !tagsSearch ? (
               <li className="px-2 py-1 text-[11px] text-neutral-300 italic">
                 No tags yet

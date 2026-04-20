@@ -167,12 +167,12 @@ export function LibraryGridItem({
           )}
         </div>
 
-        {/* Label row: dots + name */}
-        <div className="flex items-center gap-2 px-1.5 py-1">
+        {/* Label row: dots absolute-positioned left; name centered in full width */}
+        <div className="relative px-1.5 py-1">
           {visibleDots.length > 0 && (
             // biome-ignore lint/a11y/noStaticElementInteractions: hover target for popover
             <div
-              className="flex flex-shrink-0 items-center"
+              className="absolute top-1/2 left-1.5 flex -translate-y-1/2 items-center"
               style={{
                 width:
                   DOT_SIZE +
@@ -213,12 +213,12 @@ export function LibraryGridItem({
                 if (e.key === 'Escape') setIsRenaming(false);
                 e.stopPropagation();
               }}
-              className="min-w-0 flex-1 rounded border border-blue-400 bg-white px-1 py-0.5 text-[11px] text-neutral-800 outline-none"
+              className="w-full rounded border border-blue-400 bg-white px-1 py-0.5 text-center text-[11px] text-neutral-800 outline-none"
               placeholder={snap.sourceApp || 'Untitled'}
             />
           ) : (
             <p
-              className="min-w-0 truncate text-[11px] text-neutral-500"
+              className="truncate text-center text-[11px] text-neutral-500"
               title={displayName(snap)}
             >
               {displayName(snap)}
