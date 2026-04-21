@@ -8,6 +8,7 @@ interface LibraryHeaderProps {
   snapCount: number;
   zoom: number;
   onZoomChange: (zoom: number) => void;
+  search?: React.ReactNode;
 }
 
 export function LibraryHeader({
@@ -16,18 +17,21 @@ export function LibraryHeader({
   snapCount,
   zoom,
   onZoomChange,
+  search,
 }: LibraryHeaderProps) {
   const toggleDirection = () => {
     onSortDirectionChange(sortDirection === 'desc' ? 'asc' : 'desc');
   };
 
   return (
-    <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-1.5">
-      <span className="text-xs text-neutral-400">
+    <div className="flex items-center gap-3 border-b border-neutral-200 px-4 py-1.5">
+      <span className="flex-shrink-0 text-xs text-neutral-400">
         {snapCount} snap{snapCount !== 1 ? 's' : ''}
       </span>
 
-      <div className="flex items-center gap-3">
+      <div className="min-w-0 flex-1">{search}</div>
+
+      <div className="flex flex-shrink-0 items-center gap-3">
         {/* Zoom slider */}
         <div className="flex items-center gap-1.5 text-neutral-400">
           <GridIcon small />

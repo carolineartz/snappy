@@ -1,0 +1,245 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type {
+  HexColor,
+  Tag,
+  TagWithUsageCount,
+} from '../../../shared/tag-colors';
+import { getTagColorStyles } from '../../../shared/tag-colors';
+import type { SearchChip } from './LibraryApp';
+import { SearchAutocomplete } from './SearchAutocomplete';
+
+interface SearchBarProps {
+  chips: SearchChip[];
+  text: string;
+  onTextChange: (t: string) => void;
+  onAddChip: (c: SearchChip) => void;
+  onRemoveChip: (c: SearchChip) => void;
+  allTags: TagWithUsageCount[];
+  sourceApps: Map<string, number>;
+  getTagRecord: (name: string) => Tag | undefined;
+}
+
+const TRIGGER_RE = /([#@])(\S*)$/;
+const MAX_OPTIONS = 10;
+
+export interface AutocompleteOption {
+  value: string;
+  count: number;
+  color?: HexColor | null;
+}
+
+export function SearchBar({
+  chips,
+  text,
+  onTextChange,
+  onAddChip,
+  onRemoveChip,
+  allTags,
+  sourceApps,
+  getTagRecord,
+}: SearchBarProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  // Detect trigger ([#@]...) at end of text
+  const trigger = useMemo(() => {
+    const match = text.match(TRIGGER_RE);
+    if (!match) return null;
+    return {
+      type: match[1] === '#' ? ('tag' as const) : ('app' as const),
+      query: match[2],
+      fullMatch: match[0],
+    };
+  }, [text]);
+
+  const options = useMemo<AutocompleteOption[]>(() => {
+    if (!trigger) return [];
+    const q = trigger.query.toLowerCase();
+    if (trigger.type === 'tag') {
+      const assignedTags = new Set(
+        chips.filter((c) => c.type === 'tag').map((c) => c.value),
+      );
+      return allTags
+        .filter(
+          (t) => !assignedTags.has(t.name) && t.name.toLowerCase().includes(q),
+        )
+        .slice(0, MAX_OPTIONS)
+        .map((t) => ({ value: t.name, count: t.usageCount, color: t.color }));
+    }
+    const assignedApps = new Set(
+      chips.filter((c) => c.type === 'app').map((c) => c.value),
+    );
+    return [...sourceApps.entries()]
+      .filter(
+        ([name]) => !assignedApps.has(name) && name.toLowerCase().includes(q),
+      )
+      .slice(0, MAX_OPTIONS)
+      .map(([value, count]) => ({ value, count }));
+  }, [trigger, allTags, sourceApps, chips]);
+
+  // Clamp active index when options shrink
+  useEffect(() => {
+    setActiveIdx((i) => (i >= options.length ? 0 : i));
+  }, [options.length]);
+
+  const popoverOpen = isFocused && trigger !== null && options.length > 0;
+
+  const commitChip = (value: string) => {
+    if (!trigger) return;
+    const base = text.slice(0, text.length - trigger.fullMatch.length);
+    onTextChange(base);
+    onAddChip({ type: trigger.type, value });
+    inputRef.current?.focus();
+  };
+
+  const stripTrigger = () => {
+    if (!trigger) return;
+    const base = text.slice(0, text.length - trigger.fullMatch.length);
+    onTextChange(base);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (popoverOpen) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setActiveIdx((i) => (i + 1) % options.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActiveIdx((i) => (i - 1 + options.length) % options.length);
+        return;
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const opt = options[activeIdx];
+        if (opt) commitChip(opt.value);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        stripTrigger();
+        return;
+      }
+    }
+    if (e.key === 'Backspace' && text === '' && chips.length > 0) {
+      e.preventDefault();
+      onRemoveChip(chips[chips.length - 1]);
+    }
+  };
+
+  return (
+    <div className="relative w-full max-w-md">
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: wrapper forwards click to input */}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: wrapper forwards click to input */}
+      <div
+        onClick={() => inputRef.current?.focus()}
+        className={`flex min-h-[26px] flex-wrap items-center gap-1 rounded-md border px-2 py-0.5 transition-colors ${
+          isFocused
+            ? 'border-blue-400 bg-white'
+            : 'border-neutral-200 bg-neutral-50/80'
+        }`}
+      >
+        {chips.map((chip) => (
+          <SearchChipPill
+            key={`${chip.type}:${chip.value}`}
+            chip={chip}
+            getTagRecord={getTagRecord}
+            onRemove={() => onRemoveChip(chip)}
+          />
+        ))}
+        <input
+          ref={inputRef}
+          type="text"
+          value={text}
+          onChange={(e) => onTextChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          placeholder={chips.length === 0 ? 'Search name, #tag, @app…' : ''}
+          className="min-w-[80px] flex-1 bg-transparent py-0.5 text-[12px] text-neutral-800 outline-none placeholder:text-neutral-400"
+        />
+      </div>
+      {popoverOpen && (
+        <SearchAutocomplete
+          triggerType={trigger.type}
+          options={options}
+          activeIdx={activeIdx}
+          onHover={setActiveIdx}
+          onSelect={commitChip}
+        />
+      )}
+    </div>
+  );
+}
+
+function SearchChipPill({
+  chip,
+  getTagRecord,
+  onRemove,
+}: {
+  chip: SearchChip;
+  getTagRecord: (name: string) => Tag | undefined;
+  onRemove: () => void;
+}) {
+  const isTag = chip.type === 'tag';
+  const record = isTag ? getTagRecord(chip.value) : undefined;
+  const dotColor = isTag
+    ? record?.color
+      ? getTagColorStyles(record.color).dotColor
+      : '#9ca3af'
+    : null;
+
+  return (
+    <span className="flex items-center gap-1 rounded bg-neutral-200/70 py-0.5 pr-0.5 pl-1.5 text-[11px] text-neutral-700">
+      {isTag ? (
+        <span
+          className="h-2 w-2 flex-shrink-0 rounded-full"
+          style={{ backgroundColor: dotColor ?? '#9ca3af' }}
+        />
+      ) : (
+        <AppIconInline appName={chip.value} />
+      )}
+      <span>{chip.value}</span>
+      <button
+        type="button"
+        onMouseDown={(e) => {
+          e.preventDefault();
+          onRemove();
+        }}
+        className="flex h-3.5 w-3.5 items-center justify-center rounded text-neutral-500 hover:bg-neutral-300 hover:text-neutral-800"
+        aria-label={`Remove ${chip.value}`}
+      >
+        ×
+      </button>
+    </span>
+  );
+}
+
+function AppIconInline({ appName }: { appName: string }) {
+  const [iconSrc, setIconSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (appName && appName !== 'Other') {
+      window.snappy.library.getAppIcon(appName).then(setIconSrc);
+    }
+  }, [appName]);
+
+  if (iconSrc) {
+    return (
+      <img
+        src={iconSrc}
+        alt=""
+        className="h-3 w-3 flex-shrink-0"
+        draggable={false}
+      />
+    );
+  }
+
+  return (
+    <span className="flex h-3 w-3 flex-shrink-0 items-center justify-center rounded bg-neutral-300 text-[7px] text-neutral-600">
+      ?
+    </span>
+  );
+}

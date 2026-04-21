@@ -8,12 +8,14 @@ interface FilterPanelProps {
   timeFilter: TimeFilter;
   onTimeFilterChange: (filter: TimeFilter) => void;
   sourceApps: Map<string, number>;
-  selectedApp: string | null;
-  onSelectedAppChange: (app: string | null) => void;
+  appChips: string[];
+  onToggleApp: (app: string) => void;
   allTags: TagWithUsageCount[];
-  selectedTag: string | null;
-  onSelectedTagChange: (tag: string | null) => void;
+  tagChips: string[];
+  onToggleTag: (tag: string) => void;
   totalCount: number;
+  hasActiveChips: boolean;
+  onClearChips: () => void;
 }
 
 const TIME_FILTERS: { value: TimeFilter; label: string }[] = [
@@ -95,13 +97,17 @@ export function FilterPanel({
   timeFilter,
   onTimeFilterChange,
   sourceApps,
-  selectedApp,
-  onSelectedAppChange,
+  appChips,
+  onToggleApp,
   allTags,
-  selectedTag,
-  onSelectedTagChange,
+  tagChips,
+  onToggleTag,
   totalCount,
+  hasActiveChips,
+  onClearChips,
 }: FilterPanelProps) {
+  const appChipsSet = useMemo(() => new Set(appChips), [appChips]);
+  const tagChipsSet = useMemo(() => new Set(tagChips), [tagChips]);
   const [appsSearch, setAppsSearch] = useState('');
   const [tagsSearch, setTagsSearch] = useState('');
   const [appsSearchOpen, setAppsSearchOpen] = useState(false);
@@ -168,15 +174,10 @@ export function FilterPanel({
               <FilterRow
                 label={label}
                 count={value === 'all' ? totalCount : undefined}
-                selected={
-                  timeFilter === value &&
-                  selectedApp === null &&
-                  selectedTag === null
-                }
+                selected={timeFilter === value && !hasActiveChips}
                 onClick={() => {
                   onTimeFilterChange(value);
-                  onSelectedAppChange(null);
-                  onSelectedTagChange(null);
+                  if (value === 'all' && hasActiveChips) onClearChips();
                 }}
               />
             </li>
@@ -187,10 +188,7 @@ export function FilterPanel({
       <div className="mx-3 border-t border-neutral-200" />
 
       {/* Apps + Tags — shared scroll region, sections size to content */}
-      <div
-        ref={scrollRegionRef}
-        className="min-h-0 flex-1 overflow-y-auto"
-      >
+      <div ref={scrollRegionRef} className="min-h-0 flex-1 overflow-y-auto">
         {/* Applications */}
         <div className="px-3 pt-2">
           <FilterSectionTitle
@@ -207,12 +205,8 @@ export function FilterPanel({
                   leading={<AppIcon appName={appName} />}
                   label={appName}
                   count={count}
-                  selected={selectedApp === appName}
-                  onClick={() =>
-                    onSelectedAppChange(
-                      selectedApp === appName ? null : appName,
-                    )
-                  }
+                  selected={appChipsSet.has(appName)}
+                  onClick={() => onToggleApp(appName)}
                 />
               </li>
             ))}
@@ -272,12 +266,8 @@ export function FilterPanel({
                         }
                         label={tag.name}
                         count={tag.usageCount}
-                        selected={selectedTag === tag.name}
-                        onClick={() =>
-                          onSelectedTagChange(
-                            selectedTag === tag.name ? null : tag.name,
-                          )
-                        }
+                        selected={tagChipsSet.has(tag.name)}
+                        onClick={() => onToggleTag(tag.name)}
                       />
                     </li>
                   );

@@ -4,9 +4,14 @@ import type { SnapItem } from '../../types';
 import { FilterPanel } from './FilterPanel';
 import { LibraryGrid } from './LibraryGrid';
 import { LibraryHeader } from './LibraryHeader';
+import { SearchBar } from './SearchBar';
 
 export type TimeFilter = 'all' | '24h' | '7d' | '30d';
 export type SortDirection = 'desc' | 'asc';
+
+export type SearchChip =
+  | { type: 'app'; value: string }
+  | { type: 'tag'; value: string };
 
 export const ZOOM_MIN = 120;
 export const ZOOM_MAX = 500;
@@ -30,8 +35,8 @@ function filterByTime(snaps: SnapItem[], filter: TimeFilter): SnapItem[] {
 export function LibraryApp() {
   const [snaps, setSnaps] = useState<SnapItem[]>([]);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
-  const [selectedApp, setSelectedApp] = useState<string | null>(null);
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [chips, setChips] = useState<SearchChip[]>([]);
+  const [searchText, setSearchText] = useState('');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [allTags, setAllTags] = useState<TagWithUsageCount[]>([]);
   const [snapTags, setSnapTags] = useState<Map<string, string[]>>(new Map());
@@ -100,16 +105,64 @@ export function LibraryApp() {
     return new Map([...map.entries()].sort(([a], [b]) => a.localeCompare(b)));
   }, [snaps]);
 
+  const appChipValues = useMemo(
+    () =>
+      chips
+        .filter(
+          (c): c is Extract<SearchChip, { type: 'app' }> => c.type === 'app',
+        )
+        .map((c) => c.value),
+    [chips],
+  );
+  const tagChipValues = useMemo(
+    () =>
+      chips
+        .filter(
+          (c): c is Extract<SearchChip, { type: 'tag' }> => c.type === 'tag',
+        )
+        .map((c) => c.value),
+    [chips],
+  );
+
+  const toggleChip = useCallback((chip: SearchChip) => {
+    setChips((prev) => {
+      const idx = prev.findIndex(
+        (c) => c.type === chip.type && c.value === chip.value,
+      );
+      if (idx >= 0) return prev.filter((_, i) => i !== idx);
+      return [...prev, chip];
+    });
+  }, []);
+
+  const removeChip = useCallback((chip: SearchChip) => {
+    setChips((prev) =>
+      prev.filter((c) => !(c.type === chip.type && c.value === chip.value)),
+    );
+  }, []);
+
   // Apply filters and sort
+  // Chip semantics: OR within a type, AND across types.
   const filteredSnaps = useMemo(() => {
     let result = filterByTime(snaps, timeFilter);
 
-    if (selectedApp) {
-      result = result.filter((s) => (s.sourceApp || 'Other') === selectedApp);
+    if (appChipValues.length > 0) {
+      result = result.filter((s) =>
+        appChipValues.includes(s.sourceApp || 'Other'),
+      );
     }
 
-    if (selectedTag) {
-      result = result.filter((s) => snapTags.get(s.id)?.includes(selectedTag));
+    if (tagChipValues.length > 0) {
+      result = result.filter((s) => {
+        const snapTagList = snapTags.get(s.id) ?? [];
+        return tagChipValues.some((t) => snapTagList.includes(t));
+      });
+    }
+
+    const textQuery = searchText.trim().toLowerCase();
+    if (textQuery) {
+      result = result.filter((s) =>
+        (s.name ?? '').toLowerCase().includes(textQuery),
+      );
     }
 
     const sorted = [...result].sort((a, b) => {
@@ -119,7 +172,15 @@ export function LibraryApp() {
     });
 
     return sorted;
-  }, [snaps, timeFilter, selectedApp, selectedTag, snapTags, sortDirection]);
+  }, [
+    snaps,
+    timeFilter,
+    appChipValues,
+    tagChipValues,
+    searchText,
+    snapTags,
+    sortDirection,
+  ]);
 
   const handleOpen = useCallback(
     async (snapId: string) => {
@@ -152,12 +213,14 @@ export function LibraryApp() {
         timeFilter={timeFilter}
         onTimeFilterChange={setTimeFilter}
         sourceApps={sourceApps}
-        selectedApp={selectedApp}
-        onSelectedAppChange={setSelectedApp}
+        appChips={appChipValues}
+        onToggleApp={(name) => toggleChip({ type: 'app', value: name })}
         allTags={allTags}
-        selectedTag={selectedTag}
-        onSelectedTagChange={setSelectedTag}
+        tagChips={tagChipValues}
+        onToggleTag={(name) => toggleChip({ type: 'tag', value: name })}
         totalCount={snaps.length}
+        hasActiveChips={chips.length > 0}
+        onClearChips={() => setChips([])}
       />
 
       {/* Main content */}
@@ -168,6 +231,18 @@ export function LibraryApp() {
           snapCount={filteredSnaps.length}
           zoom={zoom}
           onZoomChange={handleZoomChange}
+          search={
+            <SearchBar
+              chips={chips}
+              text={searchText}
+              onTextChange={setSearchText}
+              onAddChip={toggleChip}
+              onRemoveChip={removeChip}
+              allTags={allTags}
+              sourceApps={sourceApps}
+              getTagRecord={getTagRecord}
+            />
+          }
         />
         <main className="flex-1 overflow-y-auto">
           {filteredSnaps.length === 0 ? (
