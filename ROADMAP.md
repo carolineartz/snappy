@@ -77,10 +77,6 @@ A preferences window (or panel) for configuring default behavior and shortcuts.
 - The measurement is captured via a ref callback which only fires on mount, so after the user resizes the window the cap uses a stale value
 - Fix: attach a `ResizeObserver` to the scroll region in `FilterPanel.tsx` and update `availableHeight` on every resize
 
-## Known issues
-
-- **Packaged DMG doesn't work on second Mac** — dev mode works fine. Haven't debugged yet. (Currently running dev mode on the other machine.)
-
 ## Explicitly out of scope
 
 - Sharing features (SnappyLink, social integrations) — not useful for personal workflow
