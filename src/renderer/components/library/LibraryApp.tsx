@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Tag, TagWithUsageCount } from '../../../shared/tag-colors';
 import type { SnapItem } from '../../types';
 import { FilterPanel } from './FilterPanel';
 import { LibraryGrid } from './LibraryGrid';
 import { LibraryHeader } from './LibraryHeader';
-import { SearchBar } from './SearchBar';
+import { SearchBar, type SearchBarHandle } from './SearchBar';
 
 export type TimeFilter = 'all' | '24h' | '7d' | '30d';
 export type SortDirection = 'desc' | 'asc';
@@ -52,6 +52,51 @@ export function LibraryApp() {
   const handleZoomChange = useCallback((value: number) => {
     setZoom(value);
     localStorage.setItem(ZOOM_STORAGE_KEY, String(value));
+  }, []);
+
+  const searchBarRef = useRef<SearchBarHandle>(null);
+
+  // Auto-focus the search bar when the library opens.
+  useEffect(() => {
+    searchBarRef.current?.focus();
+  }, []);
+
+  // Window-level shortcuts: Cmd+L focuses search, Esc clears or closes.
+  // Reads state via refs so we always see the latest values, not the ones
+  // captured when the listener was attached.
+  const latestStateRef = useRef({ chips, searchText });
+  useEffect(() => {
+    latestStateRef.current = { chips, searchText };
+  });
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        !e.shiftKey &&
+        e.key.toLowerCase() === 'l'
+      ) {
+        e.preventDefault();
+        searchBarRef.current?.focus();
+        return;
+      }
+      if (e.key === 'Escape') {
+        // A child may have already handled Esc (e.g. closing an autocomplete
+        // popover); let that take precedence.
+        if (e.defaultPrevented) return;
+        const { chips: latestChips, searchText: latestText } =
+          latestStateRef.current;
+        if (latestChips.length > 0 || latestText.length > 0) {
+          e.preventDefault();
+          setChips([]);
+          setSearchText('');
+          searchBarRef.current?.focus();
+        } else {
+          window.close();
+        }
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, []);
 
   const loadSnaps = useCallback(async () => {
@@ -257,6 +302,7 @@ export function LibraryApp() {
           onZoomChange={handleZoomChange}
           search={
             <SearchBar
+              ref={searchBarRef}
               chips={chips}
               text={searchText}
               onTextChange={setSearchText}

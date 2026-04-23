@@ -5,10 +5,11 @@ import { menubar } from 'menubar';
 import {
   APP_NAME,
   CAPTURE_SHORTCUT,
+  OPEN_LIBRARY_SHORTCUT,
   WINDOW_CONFIG,
 } from '../../shared/constants';
 import { EVENTS } from '../../shared/events';
-import { notifyBrowserUpdated } from '../browser-window';
+import { notifyBrowserUpdated, openBrowserWindow } from '../browser-window';
 import { captureScreen } from '../capture';
 import { createTrayIcon } from '../config';
 import { insertSnap } from '../database';
@@ -67,6 +68,20 @@ export function registerGlobalShortcut(): void {
     log.error(`Failed to register global shortcut: ${CAPTURE_SHORTCUT}`);
   } else {
     log.info(`Global shortcut registered: ${CAPTURE_SHORTCUT}`);
+  }
+
+  const libraryRegistered = globalShortcut.register(
+    OPEN_LIBRARY_SHORTCUT,
+    () => {
+      log.info('Open-library shortcut triggered');
+      openBrowserWindow();
+    },
+  );
+
+  if (!libraryRegistered) {
+    log.error(`Failed to register global shortcut: ${OPEN_LIBRARY_SHORTCUT}`);
+  } else {
+    log.info(`Global shortcut registered: ${OPEN_LIBRARY_SHORTCUT}`);
   }
 }
 

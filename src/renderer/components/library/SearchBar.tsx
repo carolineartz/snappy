@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type {
   HexColor,
   Tag,
@@ -19,6 +26,10 @@ interface SearchBarProps {
   getTagRecord: (name: string) => Tag | undefined;
 }
 
+export interface SearchBarHandle {
+  focus(): void;
+}
+
 const TRIGGER_RE = /\b(tag|app):(\S*)$/;
 const MAX_OPTIONS = 10;
 
@@ -30,153 +41,172 @@ export interface AutocompleteOption {
   color?: HexColor | null;
 }
 
-export function SearchBar({
-  chips,
-  text,
-  onTextChange,
-  onAddChip,
-  onRemoveChip,
-  allTags,
-  sourceApps,
-  getTagRecord,
-}: SearchBarProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [isFocused, setIsFocused] = useState(false);
-  const [activeIdx, setActiveIdx] = useState(0);
+export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(
+  function SearchBar(
+    {
+      chips,
+      text,
+      onTextChange,
+      onAddChip,
+      onRemoveChip,
+      allTags,
+      sourceApps,
+      getTagRecord,
+    },
+    ref,
+  ) {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [isFocused, setIsFocused] = useState(false);
+    const [activeIdx, setActiveIdx] = useState(0);
 
-  // Detect trigger (tag:/app:...) at end of text. `name:` is handled by the
-  // library filter directly — no popover, results filter live.
-  const trigger = useMemo(() => {
-    const match = text.match(TRIGGER_RE);
-    if (!match) return null;
-    return {
-      type: match[1] as TriggerType,
-      query: match[2],
-      fullMatch: match[0],
-    };
-  }, [text]);
+    useImperativeHandle(
+      ref,
+      () => ({
+        focus() {
+          inputRef.current?.focus();
+          inputRef.current?.select();
+        },
+      }),
+      [],
+    );
 
-  const options = useMemo<AutocompleteOption[]>(() => {
-    if (!trigger) return [];
-    const q = trigger.query.toLowerCase();
-    if (trigger.type === 'tag') {
-      const assignedTags = new Set(
-        chips.filter((c) => c.type === 'tag').map((c) => c.value),
+    // Detect trigger (tag:/app:...) at end of text. `name:` is handled by the
+    // library filter directly — no popover, results filter live.
+    const trigger = useMemo(() => {
+      const match = text.match(TRIGGER_RE);
+      if (!match) return null;
+      return {
+        type: match[1] as TriggerType,
+        query: match[2],
+        fullMatch: match[0],
+      };
+    }, [text]);
+
+    const options = useMemo<AutocompleteOption[]>(() => {
+      if (!trigger) return [];
+      const q = trigger.query.toLowerCase();
+      if (trigger.type === 'tag') {
+        const assignedTags = new Set(
+          chips.filter((c) => c.type === 'tag').map((c) => c.value),
+        );
+        return allTags
+          .filter(
+            (t) =>
+              !assignedTags.has(t.name) && t.name.toLowerCase().includes(q),
+          )
+          .slice(0, MAX_OPTIONS)
+          .map((t) => ({ value: t.name, count: t.usageCount, color: t.color }));
+      }
+      // app
+      const assignedApps = new Set(
+        chips.filter((c) => c.type === 'app').map((c) => c.value),
       );
-      return allTags
+      return [...sourceApps.entries()]
         .filter(
-          (t) => !assignedTags.has(t.name) && t.name.toLowerCase().includes(q),
+          ([name]) => !assignedApps.has(name) && name.toLowerCase().includes(q),
         )
         .slice(0, MAX_OPTIONS)
-        .map((t) => ({ value: t.name, count: t.usageCount, color: t.color }));
-    }
-    // app
-    const assignedApps = new Set(
-      chips.filter((c) => c.type === 'app').map((c) => c.value),
-    );
-    return [...sourceApps.entries()]
-      .filter(
-        ([name]) => !assignedApps.has(name) && name.toLowerCase().includes(q),
-      )
-      .slice(0, MAX_OPTIONS)
-      .map(([value, count]) => ({ value, count }));
-  }, [trigger, allTags, sourceApps, chips]);
+        .map(([value, count]) => ({ value, count }));
+    }, [trigger, allTags, sourceApps, chips]);
 
-  // Clamp active index when options shrink
-  useEffect(() => {
-    setActiveIdx((i) => (i >= options.length ? 0 : i));
-  }, [options.length]);
+    // Clamp active index when options shrink
+    useEffect(() => {
+      setActiveIdx((i) => (i >= options.length ? 0 : i));
+    }, [options.length]);
 
-  const popoverOpen = isFocused && trigger !== null && options.length > 0;
+    const popoverOpen = isFocused && trigger !== null && options.length > 0;
 
-  const commitChip = (value: string) => {
-    if (!trigger) return;
-    const base = text.slice(0, text.length - trigger.fullMatch.length);
-    onTextChange(base);
-    onAddChip({ type: trigger.type, value });
-    inputRef.current?.focus();
-  };
+    const commitChip = (value: string) => {
+      if (!trigger) return;
+      const base = text.slice(0, text.length - trigger.fullMatch.length);
+      onTextChange(base);
+      onAddChip({ type: trigger.type, value });
+      inputRef.current?.focus();
+    };
 
-  const stripTrigger = () => {
-    if (!trigger) return;
-    const base = text.slice(0, text.length - trigger.fullMatch.length);
-    onTextChange(base);
-  };
+    const stripTrigger = () => {
+      if (!trigger) return;
+      const base = text.slice(0, text.length - trigger.fullMatch.length);
+      onTextChange(base);
+    };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (popoverOpen) {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setActiveIdx((i) => (i + 1) % options.length);
-        return;
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (popoverOpen) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setActiveIdx((i) => (i + 1) % options.length);
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setActiveIdx((i) => (i - 1 + options.length) % options.length);
+          return;
+        }
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const opt = options[activeIdx];
+          if (opt) commitChip(opt.value);
+          return;
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          stripTrigger();
+          return;
+        }
       }
-      if (e.key === 'ArrowUp') {
+      if (e.key === 'Backspace' && text === '' && chips.length > 0) {
         e.preventDefault();
-        setActiveIdx((i) => (i - 1 + options.length) % options.length);
-        return;
+        onRemoveChip(chips[chips.length - 1]);
       }
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const opt = options[activeIdx];
-        if (opt) commitChip(opt.value);
-        return;
-      }
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        stripTrigger();
-        return;
-      }
-    }
-    if (e.key === 'Backspace' && text === '' && chips.length > 0) {
-      e.preventDefault();
-      onRemoveChip(chips[chips.length - 1]);
-    }
-  };
+    };
 
-  return (
-    <div className="relative w-full max-w-md">
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: wrapper forwards click to input */}
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: wrapper forwards click to input */}
-      <div
-        onClick={() => inputRef.current?.focus()}
-        className={`flex min-h-[26px] flex-wrap items-center gap-1 rounded-md border px-2 py-0.5 transition-colors ${
-          isFocused
-            ? 'border-blue-400 bg-white'
-            : 'border-neutral-200 bg-neutral-50/80'
-        }`}
-      >
-        {chips.map((chip) => (
-          <SearchChipPill
-            key={`${chip.type}:${chip.value}`}
-            chip={chip}
-            getTagRecord={getTagRecord}
-            onRemove={() => onRemoveChip(chip)}
+    return (
+      <div className="relative w-full max-w-md">
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: wrapper forwards click to input */}
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: wrapper forwards click to input */}
+        <div
+          onClick={() => inputRef.current?.focus()}
+          className={`flex min-h-[26px] flex-wrap items-center gap-1 rounded-md border px-2 py-0.5 transition-colors ${
+            isFocused
+              ? 'border-blue-400 bg-white'
+              : 'border-neutral-200 bg-neutral-50/80'
+          }`}
+        >
+          {chips.map((chip) => (
+            <SearchChipPill
+              key={`${chip.type}:${chip.value}`}
+              chip={chip}
+              getTagRecord={getTagRecord}
+              onRemove={() => onRemoveChip(chip)}
+            />
+          ))}
+          <input
+            ref={inputRef}
+            type="text"
+            value={text}
+            onChange={(e) => onTextChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder={
+              chips.length === 0 ? 'Search — or name: tag: app:…' : ''
+            }
+            className="min-w-[80px] flex-1 bg-transparent py-0.5 text-[12px] text-neutral-800 outline-none placeholder:text-neutral-400"
           />
-        ))}
-        <input
-          ref={inputRef}
-          type="text"
-          value={text}
-          onChange={(e) => onTextChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          placeholder={chips.length === 0 ? 'Search — or name: tag: app:…' : ''}
-          className="min-w-[80px] flex-1 bg-transparent py-0.5 text-[12px] text-neutral-800 outline-none placeholder:text-neutral-400"
-        />
+        </div>
+        {popoverOpen && (
+          <SearchAutocomplete
+            triggerType={trigger.type}
+            options={options}
+            activeIdx={activeIdx}
+            onHover={setActiveIdx}
+            onSelect={commitChip}
+          />
+        )}
       </div>
-      {popoverOpen && (
-        <SearchAutocomplete
-          triggerType={trigger.type}
-          options={options}
-          activeIdx={activeIdx}
-          onHover={setActiveIdx}
-          onSelect={commitChip}
-        />
-      )}
-    </div>
-  );
-}
+    );
+  },
+);
 
 function SearchChipPill({
   chip,

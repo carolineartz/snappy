@@ -17,6 +17,7 @@ export const BROWSER_WINDOW_CONFIG = {
 } as const;
 
 export const CAPTURE_SHORTCUT = 'CommandOrControl+Shift+2';
+export const OPEN_LIBRARY_SHORTCUT = 'CommandOrControl+Shift+L';
 
 export const SNAPS_DIR_NAME = 'snaps';
 
