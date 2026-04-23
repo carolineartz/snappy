@@ -151,6 +151,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(
         if (e.key === 'Escape') {
           e.preventDefault();
           stripTrigger();
+          inputRef.current?.focus();
           return;
         }
       }
