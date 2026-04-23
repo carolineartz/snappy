@@ -50,15 +50,6 @@ export function SearchAutocomplete({
               >
                 {triggerType === 'tag' && <TagDot color={opt.color ?? null} />}
                 {triggerType === 'app' && <AppIconSmall appName={opt.value} />}
-                {triggerType === 'name' && (
-                  <span
-                    className={`flex-shrink-0 text-[10px] font-semibold ${
-                      active ? 'text-blue-100' : 'text-neutral-400'
-                    }`}
-                  >
-                    $
-                  </span>
-                )}
                 <span className="flex-1 truncate">{opt.value}</span>
                 {opt.count !== undefined && (
                   <span

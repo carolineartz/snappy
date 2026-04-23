@@ -20,7 +20,7 @@ interface SearchBarProps {
   getTagRecord: (name: string) => Tag | undefined;
 }
 
-const TRIGGER_RE = /([#@$])(\S*)$/;
+const TRIGGER_RE = /\b(tag|app|name):(\S*)$/;
 const MAX_OPTIONS = 10;
 
 export type TriggerType = 'tag' | 'app' | 'name';
@@ -30,12 +30,6 @@ export interface AutocompleteOption {
   count?: number;
   color?: HexColor | null;
 }
-
-const TRIGGER_TO_TYPE: Record<string, TriggerType> = {
-  '#': 'tag',
-  '@': 'app',
-  $: 'name',
-};
 
 export function SearchBar({
   chips,
@@ -52,13 +46,15 @@ export function SearchBar({
   const [isFocused, setIsFocused] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
 
-  // Detect trigger ([#@$]...) at end of text
+  // Detect trigger (tag:/app:/name:...) at end of text
   const trigger = useMemo(() => {
     const match = text.match(TRIGGER_RE);
     if (!match) return null;
-    const type = TRIGGER_TO_TYPE[match[1]];
-    if (!type) return null;
-    return { type, query: match[2], fullMatch: match[0] };
+    return {
+      type: match[1] as TriggerType,
+      query: match[2],
+      fullMatch: match[0],
+    };
   }, [text]);
 
   const options = useMemo<AutocompleteOption[]>(() => {
@@ -86,7 +82,9 @@ export function SearchBar({
         .slice(0, MAX_OPTIONS)
         .map(([value, count]) => ({ value, count }));
     }
-    // name
+    // name — require at least 1 char before suggesting (names aren't worth
+    // scrolling through when empty)
+    if (q.length === 0) return [];
     const assignedNames = new Set(
       chips.filter((c) => c.type === 'name').map((c) => c.value),
     );
@@ -175,7 +173,9 @@ export function SearchBar({
           onKeyDown={handleKeyDown}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholder={chips.length === 0 ? 'Search, $name, #tag, @app…' : ''}
+          placeholder={
+            chips.length === 0 ? 'Search — or name: tag: app:…' : ''
+          }
           className="min-w-[80px] flex-1 bg-transparent py-0.5 text-[12px] text-neutral-800 outline-none placeholder:text-neutral-400"
         />
       </div>
@@ -217,8 +217,8 @@ function SearchChipPill({
     leading = <AppIconInline appName={chip.value} />;
   } else {
     leading = (
-      <span className="flex-shrink-0 text-[10px] font-semibold text-neutral-500">
-        $
+      <span className="flex-shrink-0 text-[9px] font-semibold uppercase tracking-wide text-neutral-400">
+        name
       </span>
     );
   }
