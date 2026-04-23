@@ -190,15 +190,21 @@ export function LibraryApp() {
 
   // CLIP semantic search: debounce the free-text query, send to the main
   // process, cache scored snap IDs for the filter pipeline to consume.
+  // Uses a token counter so in-flight requests that are superseded (or
+  // outlive an input clear) don't overwrite current state.
   const [clipScores, setClipScores] = useState<Map<string, number>>(new Map());
+  const clipTokenRef = useRef(0);
   useEffect(() => {
     const q = parsedSearch.freeText;
     if (!q || q.length < 3) {
-      setClipScores(new Map());
+      clipTokenRef.current += 1;
+      setClipScores((prev) => (prev.size === 0 ? prev : new Map()));
       return;
     }
+    const token = ++clipTokenRef.current;
     const t = setTimeout(() => {
       window.snappy.library.searchByText(q, 0.2).then((results) => {
+        if (token !== clipTokenRef.current) return;
         setClipScores(new Map(results.map((r) => [r.snapId, r.score])));
       });
     }, 250);
