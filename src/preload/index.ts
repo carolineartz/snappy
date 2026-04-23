@@ -84,6 +84,12 @@ const snappyAPI = {
       ipcRenderer.invoke(EVENTS.LIBRARY_READ_THUMBNAIL, thumbPath) as Promise<
         string | null
       >,
+    searchByText: (query: string, threshold?: number) =>
+      ipcRenderer.invoke(
+        EVENTS.LIBRARY_SEARCH_BY_TEXT,
+        query,
+        threshold,
+      ) as Promise<{ snapId: string; score: number }[]>,
     onSnapsUpdated: (callback: () => void) => {
       ipcRenderer.on(EVENTS.SNAPS_UPDATED, callback);
     },

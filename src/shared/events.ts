@@ -51,5 +51,6 @@ export const EVENTS = {
   LIBRARY_OPEN_SNAP: 'snappy:library-open-snap',
   LIBRARY_DELETE_SNAP: 'snappy:library-delete-snap',
   LIBRARY_READ_THUMBNAIL: 'snappy:library-read-thumbnail',
+  LIBRARY_SEARCH_BY_TEXT: 'snappy:library-search-by-text',
   SNAPS_UPDATED: 'snappy:snaps-updated',
 } as const;

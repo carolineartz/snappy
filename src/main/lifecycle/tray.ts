@@ -15,12 +15,12 @@ import { createTrayIcon } from '../config';
 import { insertSnap } from '../database';
 import { registerAllHandlers } from '../handlers';
 import { getMenuWindow } from '../menu-window';
-import { runOcrForSnap } from '../ocr';
 import {
   createSnapWindow,
   getSnapWindows,
   setOnSnapWindowClosed,
 } from '../snap-window';
+import { runVisionForSnap } from '../vision';
 
 const isDev = !!process.env.VITE_DEV_SERVER_URL;
 
@@ -52,15 +52,17 @@ export function registerGlobalShortcut(): void {
         annotations: null,
         thumbnailUpdatedAt: result.createdAt,
         ocrText: null,
+        classificationLabels: null,
+        visualEmbedding: null,
       });
 
       createSnapWindow(result);
       notifyTrayUpdated();
 
-      // Fire-and-forget OCR — updates the snap row when done.
-      runOcrForSnap(result.id, result.filePath)
+      // Fire-and-forget vision pipeline — OCR + classification + CLIP.
+      runVisionForSnap(result.id, result.filePath)
         .then(() => notifyTrayUpdated())
-        .catch((err) => log.warn(`OCR failed for ${result.id}: ${err}`));
+        .catch((err) => log.warn(`Vision failed for ${result.id}: ${err}`));
     }
   });
 

@@ -168,20 +168,42 @@ export function LibraryApp() {
         .map((c) => c.value),
     [chips],
   );
-  // Parse `name:<query>` out of the free-text search. The remaining text
-  // (with all known keyword: fragments stripped) is matched against
-  // snap.name + OCR text. Uncommitted `tag:` / `app:` fragments are also
-  // stripped so partially-typed triggers don't filter results literally.
+  // Parse keyword triggers out of the free-text search:
+  //   name:<q>  -> filter snap.name only
+  //   text:<q>  -> filter OCR text only
+  // The remaining tokens (after stripping all known keyword: fragments) are
+  // matched against snap.name + OCR + classification labels AND fed to
+  // MobileCLIP for semantic similarity. Uncommitted tag:/app: fragments are
+  // stripped so partially-typed triggers don't leak into the free-text match.
   const parsedSearch = useMemo(() => {
     const nameMatch = searchText.match(/\bname:(\S+)/i);
+    const textMatch = searchText.match(/\btext:(\S+)/i);
     const nameQuery = nameMatch ? nameMatch[1].toLowerCase() : null;
+    const ocrOnlyQuery = textMatch ? textMatch[1].toLowerCase() : null;
     const freeText = searchText
-      .replace(/\b(?:name|tag|app):\S*/gi, ' ')
+      .replace(/\b(?:name|tag|app|text):\S*/gi, ' ')
       .replace(/\s+/g, ' ')
       .trim()
       .toLowerCase();
-    return { nameQuery, freeText };
+    return { nameQuery, ocrOnlyQuery, freeText };
   }, [searchText]);
+
+  // CLIP semantic search: debounce the free-text query, send to the main
+  // process, cache scored snap IDs for the filter pipeline to consume.
+  const [clipScores, setClipScores] = useState<Map<string, number>>(new Map());
+  useEffect(() => {
+    const q = parsedSearch.freeText;
+    if (!q || q.length < 3) {
+      setClipScores(new Map());
+      return;
+    }
+    const t = setTimeout(() => {
+      window.snappy.library.searchByText(q, 0.2).then((results) => {
+        setClipScores(new Map(results.map((r) => [r.snapId, r.score])));
+      });
+    }, 250);
+    return () => clearTimeout(t);
+  }, [parsedSearch.freeText]);
 
   const toggleChip = useCallback((chip: SearchChip) => {
     setChips((prev) => {
@@ -218,23 +240,46 @@ export function LibraryApp() {
     }
 
     if (parsedSearch.nameQuery) {
+      const q = parsedSearch.nameQuery;
+      result = result.filter((s) => (s.name ?? '').toLowerCase().includes(q));
+    }
+
+    if (parsedSearch.ocrOnlyQuery) {
+      const q = parsedSearch.ocrOnlyQuery;
       result = result.filter((s) =>
-        (s.name ?? '').toLowerCase().includes(parsedSearch.nameQuery as string),
+        (s.ocrText ?? '').toLowerCase().includes(q),
       );
     }
 
+    // Track CLIP-based relevance so we can re-rank below.
+    const scoreBySnap = new Map<string, number>();
     if (parsedSearch.freeText) {
+      const q = parsedSearch.freeText;
       result = result.filter((s) => {
         const name = (s.name ?? '').toLowerCase();
-        const ocrText = (s.ocrText ?? '').toLowerCase();
-        return (
-          name.includes(parsedSearch.freeText) ||
-          ocrText.includes(parsedSearch.freeText)
-        );
+        const ocr = (s.ocrText ?? '').toLowerCase();
+        const labels = (s.classificationLabels ?? '').toLowerCase();
+        const substringHit =
+          name.includes(q) || ocr.includes(q) || labels.includes(q);
+        const clipScore = clipScores.get(s.id);
+        if (substringHit) {
+          scoreBySnap.set(s.id, 1 + (clipScore ?? 0));
+          return true;
+        }
+        if (clipScore !== undefined) {
+          scoreBySnap.set(s.id, clipScore);
+          return true;
+        }
+        return false;
       });
     }
 
     const sorted = [...result].sort((a, b) => {
+      if (parsedSearch.freeText) {
+        const da = scoreBySnap.get(a.id) ?? 0;
+        const db = scoreBySnap.get(b.id) ?? 0;
+        if (db !== da) return db - da;
+      }
       const cmp =
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       return sortDirection === 'desc' ? -cmp : cmp;
@@ -249,6 +294,7 @@ export function LibraryApp() {
     parsedSearch,
     snapTags,
     sortDirection,
+    clipScores,
   ]);
 
   const handleOpen = useCallback(

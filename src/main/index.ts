@@ -3,7 +3,7 @@ import log from 'electron-log';
 import { notifyBrowserUpdated } from './browser-window';
 import { closeDatabase, initDatabase } from './database';
 import { createMenubar } from './lifecycle';
-import { backfillOcr } from './ocr';
+import { backfillVision } from './vision';
 
 // Guard against EIO/EPIPE errors on stdout/stderr
 const STREAM_ERROR_CODES = new Set(['EIO', 'EPIPE', 'EBADF']);
@@ -23,8 +23,8 @@ log.initialize();
 app.whenReady().then(() => {
   initDatabase();
   createMenubar();
-  backfillOcr(notifyBrowserUpdated).catch((err) =>
-    log.warn(`OCR backfill error: ${err}`),
+  backfillVision(notifyBrowserUpdated).catch((err) =>
+    log.warn(`Vision backfill error: ${err}`),
   );
 });
 

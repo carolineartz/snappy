@@ -6,6 +6,9 @@ build/
 build-native/
 dist/
 
+# Downloaded ML models (fetched via scripts/download-models.sh)
+native/models/
+
 # IDE
 .idea/
 .vscode/

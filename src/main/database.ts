@@ -31,6 +31,8 @@ export interface SnapRecord {
   annotations: string | null;
   thumbnailUpdatedAt: string | null;
   ocrText: string | null;
+  classificationLabels: string | null;
+  visualEmbedding: Buffer | null;
 }
 
 export function initDatabase(): void {
@@ -57,7 +59,9 @@ export function initDatabase(): void {
       createdAt  TEXT NOT NULL,
       annotations TEXT DEFAULT NULL,
       thumbnailUpdatedAt TEXT DEFAULT NULL,
-      ocrText    TEXT DEFAULT NULL
+      ocrText    TEXT DEFAULT NULL,
+      classificationLabels TEXT DEFAULT NULL,
+      visualEmbedding BLOB DEFAULT NULL
     )
   `);
 
@@ -85,6 +89,18 @@ export function initDatabase(): void {
   if (!snapColumnNames.has('ocrText')) {
     db.exec('ALTER TABLE snaps ADD COLUMN ocrText TEXT DEFAULT NULL');
     log.info('Migrated: added ocrText column');
+  }
+
+  if (!snapColumnNames.has('classificationLabels')) {
+    db.exec(
+      'ALTER TABLE snaps ADD COLUMN classificationLabels TEXT DEFAULT NULL',
+    );
+    log.info('Migrated: added classificationLabels column');
+  }
+
+  if (!snapColumnNames.has('visualEmbedding')) {
+    db.exec('ALTER TABLE snaps ADD COLUMN visualEmbedding BLOB DEFAULT NULL');
+    log.info('Migrated: added visualEmbedding column');
   }
 
   db.exec(`
@@ -142,7 +158,9 @@ export function insertSnap(snap: SnapRecord): void {
       createdAt,
       annotations,
       thumbnailUpdatedAt,
-      ocrText
+      ocrText,
+      classificationLabels,
+      visualEmbedding
     )
     VALUES (
       @id,
@@ -160,7 +178,9 @@ export function insertSnap(snap: SnapRecord): void {
       @createdAt,
       @annotations,
       @thumbnailUpdatedAt,
-      @ocrText
+      @ocrText,
+      @classificationLabels,
+      @visualEmbedding
     )
   `);
 
@@ -181,6 +201,8 @@ export function updateSnap(
       | 'annotations'
       | 'thumbnailUpdatedAt'
       | 'ocrText'
+      | 'classificationLabels'
+      | 'visualEmbedding'
     >
   >,
 ): void {
@@ -222,9 +244,13 @@ export function deleteSnap(id: string): void {
   statement.run(id);
 }
 
-export function getSnapsMissingOcr(): SnapRecord[] {
+export function getSnapsMissingVision(): SnapRecord[] {
   const statement = db.prepare(
-    'SELECT * FROM snaps WHERE ocrText IS NULL ORDER BY createdAt DESC',
+    `SELECT * FROM snaps
+     WHERE ocrText IS NULL
+        OR classificationLabels IS NULL
+        OR visualEmbedding IS NULL
+     ORDER BY createdAt DESC`,
   );
   return statement.all() as SnapRecord[];
 }
@@ -252,7 +278,9 @@ export function duplicateSnap(
       createdAt,
       annotations,
       thumbnailUpdatedAt,
-      ocrText
+      ocrText,
+      classificationLabels,
+      visualEmbedding
     )
     SELECT
       @newId,
@@ -270,7 +298,9 @@ export function duplicateSnap(
       createdAt,
       annotations,
       thumbnailUpdatedAt,
-      ocrText
+      ocrText,
+      classificationLabels,
+      visualEmbedding
     FROM snaps
     WHERE id = @originalId
   `);

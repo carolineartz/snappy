@@ -11,4 +11,5 @@ export interface SnapItem {
   annotations: string | null;
   thumbnailUpdatedAt: string | null;
   ocrText: string | null;
+  classificationLabels: string | null;
 }

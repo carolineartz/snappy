@@ -11,6 +11,7 @@ import {
   getSnap,
   getTagNamesForSnap,
   removeTagFromSnap,
+  type SnapRecord,
   updateSnap,
 } from '../database';
 import {
@@ -19,6 +20,7 @@ import {
   reopenSnapWindow,
 } from '../snap-window';
 import { deleteSnapFiles, findIcnsPath, handleDuplicate } from '../utils';
+import { cosineSim, decodeEmbedding, embedText } from '../vision';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- no types available
 const icns = require('electron-icns-ex');
@@ -31,10 +33,40 @@ export function registerLibraryHandlers(notifyTrayUpdated: () => void): void {
     handleDuplicate(snapId);
   });
 
-  // Library queries
+  // Library queries — strip the binary visualEmbedding from snaps before
+  // sending over IPC; the renderer never needs it (CLIP search goes through
+  // LIBRARY_SEARCH_BY_TEXT).
   ipcMain.handle(EVENTS.LIBRARY_GET_SNAPS, () => {
-    return getAllSnaps();
+    return getAllSnaps().map((snap) => {
+      const { visualEmbedding: _omitted, ...rest } = snap;
+      void _omitted;
+      return rest;
+    });
   });
+
+  // CLIP text-to-image search. Encodes the query via MobileCLIP text encoder,
+  // computes cosine similarity against every snap's stored image embedding,
+  // and returns the above-threshold matches.
+  ipcMain.handle(
+    EVENTS.LIBRARY_SEARCH_BY_TEXT,
+    async (_event, query: string, threshold = 0.2) => {
+      const trimmed = query.trim();
+      if (!trimmed) return [] as { snapId: string; score: number }[];
+      const q = await embedText(trimmed);
+      const snaps = getAllSnaps() as SnapRecord[];
+      const results: { snapId: string; score: number }[] = [];
+      for (const snap of snaps) {
+        if (!snap.visualEmbedding) continue;
+        const emb = decodeEmbedding(snap.visualEmbedding);
+        const score = cosineSim(q, emb);
+        if (score >= threshold) {
+          results.push({ snapId: snap.id, score });
+        }
+      }
+      results.sort((a, b) => b.score - a.score);
+      return results;
+    },
+  );
 
   ipcMain.handle(
     EVENTS.LIBRARY_RENAME_SNAP,

@@ -30,8 +30,16 @@
     ],
     "extraResources": [
       {
-        "from": "build-native/snappy-ocr",
-        "to": "snappy-ocr"
+        "from": "build-native/snappy-vision",
+        "to": "snappy-vision"
+      },
+      {
+        "from": "native/models",
+        "to": "models"
+      },
+      {
+        "from": "native/snappy-vision/Resources",
+        "to": "clip-resources"
       }
     ],
     "asarUnpack": [
@@ -57,9 +65,11 @@
   },
   "scripts": {
     "postinstall": "electron-rebuild -f",
-    "dev": "pnpm build:native && vite",
-    "build": "pnpm build:native && vite build",
-    "build:native": "mkdir -p build-native && swiftc -O -o build-native/snappy-ocr native/snappy-ocr/main.swift",
+    "dev": "pnpm models:ensure && pnpm build:native && vite",
+    "build": "pnpm models:ensure && pnpm build:native && vite build",
+    "build:native": "mkdir -p build-native && DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swiftc -O -o build-native/snappy-vision native/snappy-vision/main.swift native/snappy-vision/CLIPTokenizer.swift native/snappy-vision/GPT2ByteEncoder.swift native/snappy-vision/Utils.swift",
+    "models:ensure": "test -f native/models/mobileclip_s1_image.mlpackage/Data/com.apple.CoreML/weights/weight.bin || bash scripts/download-models.sh",
+    "models:download": "bash scripts/download-models.sh",
     "test": "vitest --coverage --run",
     "test:watch": "vitest --watch",
     "lint": "biome check --fix",

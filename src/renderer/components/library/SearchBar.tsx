@@ -190,7 +190,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             placeholder={
-              chips.length === 0 ? 'Search — or name: tag: app:…' : ''
+              chips.length === 0 ? 'Search — or name: text: tag: app:…' : ''
             }
             className="min-w-[80px] flex-1 bg-transparent py-0.5 text-[12px] text-neutral-800 outline-none placeholder:text-neutral-400"
           />
