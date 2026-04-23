@@ -97,19 +97,32 @@ export async function runVisionForSnap(
 
 /**
  * Process any snaps that are missing vision data. Sequential (per-snap is
- * ~200-400ms on M-series; overlapping CoreML predictions doesn't help much
- * and eats more memory).
+ * ~1-2s with CLIP + classification + OCR; overlapping CoreML predictions
+ * doesn't help much and eats more memory).
+ *
+ * Progress notifications are throttled so the library browser doesn't
+ * re-fetch + re-render dozens of times during a backfill — that floods the
+ * renderer, cancels in-flight thumbnail IPCs, and stomps on whatever the
+ * user is typing in the search bar.
  */
+const BACKFILL_NOTIFY_MS = 3000;
+
 export async function backfillVision(onProgress?: () => void): Promise<void> {
   const pending = getSnapsMissingVision();
   if (pending.length === 0) return;
   log.info(`Vision backfill: ${pending.length} snaps pending`);
 
+  let lastNotify = Date.now();
   for (const snap of pending) {
     await runVisionForSnap(snap.id, snap.filePath);
-    onProgress?.();
+    const now = Date.now();
+    if (now - lastNotify >= BACKFILL_NOTIFY_MS) {
+      onProgress?.();
+      lastNotify = now;
+    }
   }
-
+  // Final refresh once everything has settled.
+  onProgress?.();
   log.info('Vision backfill complete');
 }
 
