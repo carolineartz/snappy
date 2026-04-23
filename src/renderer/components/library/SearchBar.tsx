@@ -155,9 +155,31 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(
           return;
         }
       }
-      if (e.key === 'Backspace' && text === '' && chips.length > 0) {
-        e.preventDefault();
-        onRemoveChip(chips[chips.length - 1]);
+      if (e.key === 'Backspace') {
+        // Controlled inputs in Electron sometimes drop the onChange that
+        // should follow a native Cmd/Option+Backspace, leaving React state
+        // out of sync with the DOM value. Handle those deletions ourselves.
+        const input = e.currentTarget;
+        const cursor = input.selectionStart ?? text.length;
+        const hasSelection = (input.selectionEnd ?? cursor) !== cursor;
+        if (e.metaKey && !hasSelection) {
+          e.preventDefault();
+          onTextChange(text.slice(cursor));
+          return;
+        }
+        if (e.altKey && !hasSelection) {
+          e.preventDefault();
+          const before = text.slice(0, cursor);
+          const after = text.slice(cursor);
+          const match = before.match(/\S+\s*$|\s+$/);
+          const wordStart = match ? before.length - match[0].length : 0;
+          onTextChange(before.slice(0, wordStart) + after);
+          return;
+        }
+        if (text === '' && chips.length > 0) {
+          e.preventDefault();
+          onRemoveChip(chips[chips.length - 1]);
+        }
       }
     };
 
