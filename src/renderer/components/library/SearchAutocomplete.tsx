@@ -14,7 +14,6 @@ interface SearchAutocompleteProps {
 const SECTION_LABEL: Record<TriggerType, string> = {
   tag: 'Tags',
   app: 'Applications',
-  name: 'Names',
 };
 
 export function SearchAutocomplete({

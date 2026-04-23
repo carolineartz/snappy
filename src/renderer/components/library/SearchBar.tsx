@@ -16,14 +16,13 @@ interface SearchBarProps {
   onRemoveChip: (c: SearchChip) => void;
   allTags: TagWithUsageCount[];
   sourceApps: Map<string, number>;
-  snapNames: string[];
   getTagRecord: (name: string) => Tag | undefined;
 }
 
-const TRIGGER_RE = /\b(tag|app|name):(\S*)$/;
+const TRIGGER_RE = /\b(tag|app):(\S*)$/;
 const MAX_OPTIONS = 10;
 
-export type TriggerType = 'tag' | 'app' | 'name';
+export type TriggerType = 'tag' | 'app';
 
 export interface AutocompleteOption {
   value: string;
@@ -39,14 +38,14 @@ export function SearchBar({
   onRemoveChip,
   allTags,
   sourceApps,
-  snapNames,
   getTagRecord,
 }: SearchBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
 
-  // Detect trigger (tag:/app:/name:...) at end of text
+  // Detect trigger (tag:/app:...) at end of text. `name:` is handled by the
+  // library filter directly — no popover, results filter live.
   const trigger = useMemo(() => {
     const match = text.match(TRIGGER_RE);
     if (!match) return null;
@@ -71,28 +70,17 @@ export function SearchBar({
         .slice(0, MAX_OPTIONS)
         .map((t) => ({ value: t.name, count: t.usageCount, color: t.color }));
     }
-    if (trigger.type === 'app') {
-      const assignedApps = new Set(
-        chips.filter((c) => c.type === 'app').map((c) => c.value),
-      );
-      return [...sourceApps.entries()]
-        .filter(
-          ([name]) => !assignedApps.has(name) && name.toLowerCase().includes(q),
-        )
-        .slice(0, MAX_OPTIONS)
-        .map(([value, count]) => ({ value, count }));
-    }
-    // name — require at least 1 char before suggesting (names aren't worth
-    // scrolling through when empty)
-    if (q.length === 0) return [];
-    const assignedNames = new Set(
-      chips.filter((c) => c.type === 'name').map((c) => c.value),
+    // app
+    const assignedApps = new Set(
+      chips.filter((c) => c.type === 'app').map((c) => c.value),
     );
-    return snapNames
-      .filter((n) => !assignedNames.has(n) && n.toLowerCase().includes(q))
+    return [...sourceApps.entries()]
+      .filter(
+        ([name]) => !assignedApps.has(name) && name.toLowerCase().includes(q),
+      )
       .slice(0, MAX_OPTIONS)
-      .map((value) => ({ value }));
-  }, [trigger, allTags, sourceApps, snapNames, chips]);
+      .map(([value, count]) => ({ value, count }));
+  }, [trigger, allTags, sourceApps, chips]);
 
   // Clamp active index when options shrink
   useEffect(() => {
@@ -173,9 +161,7 @@ export function SearchBar({
           onKeyDown={handleKeyDown}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholder={
-            chips.length === 0 ? 'Search — or name: tag: app:…' : ''
-          }
+          placeholder={chips.length === 0 ? 'Search — or name: tag: app:…' : ''}
           className="min-w-[80px] flex-1 bg-transparent py-0.5 text-[12px] text-neutral-800 outline-none placeholder:text-neutral-400"
         />
       </div>
@@ -201,7 +187,7 @@ function SearchChipPill({
   getTagRecord: (name: string) => Tag | undefined;
   onRemove: () => void;
 }) {
-  let leading: React.ReactNode = null;
+  let leading: React.ReactNode;
   if (chip.type === 'tag') {
     const record = getTagRecord(chip.value);
     const dotColor = record?.color
@@ -213,14 +199,8 @@ function SearchChipPill({
         style={{ backgroundColor: dotColor }}
       />
     );
-  } else if (chip.type === 'app') {
-    leading = <AppIconInline appName={chip.value} />;
   } else {
-    leading = (
-      <span className="flex-shrink-0 text-[9px] font-semibold uppercase tracking-wide text-neutral-400">
-        name
-      </span>
-    );
+    leading = <AppIconInline appName={chip.value} />;
   }
 
   return (

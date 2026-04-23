@@ -11,8 +11,7 @@ export type SortDirection = 'desc' | 'asc';
 
 export type SearchChip =
   | { type: 'app'; value: string }
-  | { type: 'tag'; value: string }
-  | { type: 'name'; value: string };
+  | { type: 'tag'; value: string };
 
 export const ZOOM_MIN = 120;
 export const ZOOM_MAX = 500;
@@ -124,24 +123,20 @@ export function LibraryApp() {
         .map((c) => c.value),
     [chips],
   );
-  const nameChipValues = useMemo(
-    () =>
-      chips
-        .filter(
-          (c): c is Extract<SearchChip, { type: 'name' }> => c.type === 'name',
-        )
-        .map((c) => c.value),
-    [chips],
-  );
-
-  // Distinct existing snap names — used for $ autocomplete suggestions.
-  const snapNames = useMemo(() => {
-    const set = new Set<string>();
-    for (const s of snaps) {
-      if (s.name) set.add(s.name);
-    }
-    return [...set].sort((a, b) => a.localeCompare(b));
-  }, [snaps]);
+  // Parse `name:<query>` out of the free-text search. The remaining text
+  // (with all known keyword: fragments stripped) is matched against
+  // snap.name + OCR text. Uncommitted `tag:` / `app:` fragments are also
+  // stripped so partially-typed triggers don't filter results literally.
+  const parsedSearch = useMemo(() => {
+    const nameMatch = searchText.match(/\bname:(\S+)/i);
+    const nameQuery = nameMatch ? nameMatch[1].toLowerCase() : null;
+    const freeText = searchText
+      .replace(/\b(?:name|tag|app):\S*/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+    return { nameQuery, freeText };
+  }, [searchText]);
 
   const toggleChip = useCallback((chip: SearchChip) => {
     setChips((prev) => {
@@ -177,20 +172,20 @@ export function LibraryApp() {
       });
     }
 
-    if (nameChipValues.length > 0) {
-      const lower = nameChipValues.map((v) => v.toLowerCase());
-      result = result.filter((s) => {
-        const name = (s.name ?? '').toLowerCase();
-        return lower.some((q) => name.includes(q));
-      });
+    if (parsedSearch.nameQuery) {
+      result = result.filter((s) =>
+        (s.name ?? '').toLowerCase().includes(parsedSearch.nameQuery as string),
+      );
     }
 
-    const textQuery = searchText.trim().toLowerCase();
-    if (textQuery) {
+    if (parsedSearch.freeText) {
       result = result.filter((s) => {
         const name = (s.name ?? '').toLowerCase();
         const ocrText = (s.ocrText ?? '').toLowerCase();
-        return name.includes(textQuery) || ocrText.includes(textQuery);
+        return (
+          name.includes(parsedSearch.freeText) ||
+          ocrText.includes(parsedSearch.freeText)
+        );
       });
     }
 
@@ -206,8 +201,7 @@ export function LibraryApp() {
     timeFilter,
     appChipValues,
     tagChipValues,
-    nameChipValues,
-    searchText,
+    parsedSearch,
     snapTags,
     sortDirection,
   ]);
@@ -270,7 +264,6 @@ export function LibraryApp() {
               onRemoveChip={removeChip}
               allTags={allTags}
               sourceApps={sourceApps}
-              snapNames={snapNames}
               getTagRecord={getTagRecord}
             />
           }
