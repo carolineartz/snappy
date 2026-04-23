@@ -14,6 +14,7 @@ import { createTrayIcon } from '../config';
 import { insertSnap } from '../database';
 import { registerAllHandlers } from '../handlers';
 import { getMenuWindow } from '../menu-window';
+import { runOcrForSnap } from '../ocr';
 import {
   createSnapWindow,
   getSnapWindows,
@@ -49,10 +50,16 @@ export function registerGlobalShortcut(): void {
         createdAt: result.createdAt,
         annotations: null,
         thumbnailUpdatedAt: result.createdAt,
+        ocrText: null,
       });
 
       createSnapWindow(result);
       notifyTrayUpdated();
+
+      // Fire-and-forget OCR — updates the snap row when done.
+      runOcrForSnap(result.id, result.filePath)
+        .then(() => notifyTrayUpdated())
+        .catch((err) => log.warn(`OCR failed for ${result.id}: ${err}`));
     }
   });
 

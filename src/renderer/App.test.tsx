@@ -17,6 +17,7 @@ function makeSnap(overrides: Partial<SnapItem> = {}): SnapItem {
     height: 600,
     annotations: null,
     thumbnailUpdatedAt: null,
+    ocrText: null,
     ...overrides,
   };
 }

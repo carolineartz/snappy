@@ -30,6 +30,7 @@ export interface SnapRecord {
   createdAt: string;
   annotations: string | null;
   thumbnailUpdatedAt: string | null;
+  ocrText: string | null;
 }
 
 export function initDatabase(): void {
@@ -55,7 +56,8 @@ export function initDatabase(): void {
       isOpen     INTEGER DEFAULT 1,
       createdAt  TEXT NOT NULL,
       annotations TEXT DEFAULT NULL,
-      thumbnailUpdatedAt TEXT DEFAULT NULL
+      thumbnailUpdatedAt TEXT DEFAULT NULL,
+      ocrText    TEXT DEFAULT NULL
     )
   `);
 
@@ -78,6 +80,11 @@ export function initDatabase(): void {
       'ALTER TABLE snaps ADD COLUMN thumbnailUpdatedAt TEXT DEFAULT NULL',
     );
     log.info('Migrated: added thumbnailUpdatedAt column');
+  }
+
+  if (!snapColumnNames.has('ocrText')) {
+    db.exec('ALTER TABLE snaps ADD COLUMN ocrText TEXT DEFAULT NULL');
+    log.info('Migrated: added ocrText column');
   }
 
   db.exec(`
@@ -134,7 +141,8 @@ export function insertSnap(snap: SnapRecord): void {
       isOpen,
       createdAt,
       annotations,
-      thumbnailUpdatedAt
+      thumbnailUpdatedAt,
+      ocrText
     )
     VALUES (
       @id,
@@ -151,7 +159,8 @@ export function insertSnap(snap: SnapRecord): void {
       @isOpen,
       @createdAt,
       @annotations,
-      @thumbnailUpdatedAt
+      @thumbnailUpdatedAt,
+      @ocrText
     )
   `);
 
@@ -171,6 +180,7 @@ export function updateSnap(
       | 'isOpen'
       | 'annotations'
       | 'thumbnailUpdatedAt'
+      | 'ocrText'
     >
   >,
 ): void {
@@ -212,6 +222,13 @@ export function deleteSnap(id: string): void {
   statement.run(id);
 }
 
+export function getSnapsMissingOcr(): SnapRecord[] {
+  const statement = db.prepare(
+    'SELECT * FROM snaps WHERE ocrText IS NULL ORDER BY createdAt DESC',
+  );
+  return statement.all() as SnapRecord[];
+}
+
 export function duplicateSnap(
   originalId: string,
   newId: string,
@@ -234,7 +251,8 @@ export function duplicateSnap(
       isOpen,
       createdAt,
       annotations,
-      thumbnailUpdatedAt
+      thumbnailUpdatedAt,
+      ocrText
     )
     SELECT
       @newId,
@@ -251,7 +269,8 @@ export function duplicateSnap(
       1,
       createdAt,
       annotations,
-      thumbnailUpdatedAt
+      thumbnailUpdatedAt,
+      ocrText
     FROM snaps
     WHERE id = @originalId
   `);

@@ -28,6 +28,12 @@
       "assets/**/*",
       "package.json"
     ],
+    "extraResources": [
+      {
+        "from": "build-native/snappy-ocr",
+        "to": "snappy-ocr"
+      }
+    ],
     "asarUnpack": [
       "node_modules/better-sqlite3/**/*"
     ],
@@ -51,8 +57,9 @@
   },
   "scripts": {
     "postinstall": "electron-rebuild -f",
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "pnpm build:native && vite",
+    "build": "pnpm build:native && vite build",
+    "build:native": "mkdir -p build-native && swiftc -O -o build-native/snappy-ocr native/snappy-ocr/main.swift",
     "test": "vitest --coverage --run",
     "test:watch": "vitest --watch",
     "lint": "biome check --fix",

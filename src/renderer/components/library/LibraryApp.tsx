@@ -160,9 +160,11 @@ export function LibraryApp() {
 
     const textQuery = searchText.trim().toLowerCase();
     if (textQuery) {
-      result = result.filter((s) =>
-        (s.name ?? '').toLowerCase().includes(textQuery),
-      );
+      result = result.filter((s) => {
+        const name = (s.name ?? '').toLowerCase();
+        const ocrText = (s.ocrText ?? '').toLowerCase();
+        return name.includes(textQuery) || ocrText.includes(textQuery);
+      });
     }
 
     const sorted = [...result].sort((a, b) => {
