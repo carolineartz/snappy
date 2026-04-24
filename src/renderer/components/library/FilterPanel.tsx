@@ -14,8 +14,6 @@ interface FilterPanelProps {
   tagChips: string[];
   onSelectTag: (tag: string, additive: boolean) => void;
   totalCount: number;
-  hasActiveChips: boolean;
-  onClearChips: () => void;
 }
 
 const TIME_FILTERS: { value: TimeFilter; label: string }[] = [
@@ -103,8 +101,6 @@ export function FilterPanel({
   tagChips,
   onSelectTag,
   totalCount,
-  hasActiveChips,
-  onClearChips,
 }: FilterPanelProps) {
   const appChipsSet = useMemo(() => new Set(appChips), [appChips]);
   const tagChipsSet = useMemo(() => new Set(tagChips), [tagChips]);
@@ -175,10 +171,7 @@ export function FilterPanel({
                 label={label}
                 count={value === 'all' ? totalCount : undefined}
                 selected={timeFilter === value}
-                onClick={() => {
-                  onTimeFilterChange(value);
-                  if (value === 'all' && hasActiveChips) onClearChips();
-                }}
+                onClick={() => onTimeFilterChange(value)}
               />
             </li>
           ))}

@@ -618,8 +618,6 @@ export function LibraryApp() {
           selectChipFromSidebar({ type: 'tag', value: name }, additive)
         }
         totalCount={snaps.length}
-        hasActiveChips={chips.length > 0}
-        onClearChips={() => setChips([])}
       />
 
       {/* Main content */}
