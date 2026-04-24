@@ -11,6 +11,12 @@ interface LibraryGridItemProps {
   tags: string[];
   allTags: TagWithUsageCount[];
   getTagRecord: (tag: string) => Tag | undefined;
+  selected: boolean;
+  isAnchor: boolean;
+  onSelect: (
+    snapId: string,
+    modifiers: { shift: boolean; meta: boolean; ctrl: boolean },
+  ) => void;
   onOpen: (snapId: string) => void;
   onDelete: (snapId: string) => void;
   onDuplicate: (snapId: string) => void;
@@ -32,6 +38,9 @@ export function LibraryGridItem({
   tags,
   allTags,
   getTagRecord,
+  selected,
+  isAnchor,
+  onSelect,
   onOpen,
   onDelete,
   onDuplicate,
@@ -77,10 +86,24 @@ export function LibraryGridItem({
     snap.annotations !== '[]' &&
     snap.annotations !== '';
 
+  const handleClick = (e: React.MouseEvent) => {
+    // Finder-style click: select this item. Modifier keys extend / toggle.
+    onSelect(snap.id, {
+      shift: e.shiftKey,
+      meta: e.metaKey,
+      ctrl: e.ctrlKey,
+    });
+  };
+
   const handleDoubleClick = () => onOpen(snap.id);
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
+    // Right-click on an unselected item makes it the selection first, so
+    // menu actions operate on the item the user targeted.
+    if (!selected) {
+      onSelect(snap.id, { shift: false, meta: false, ctrl: false });
+    }
     setContextMenu({ x: e.clientX, y: e.clientY });
   };
 
@@ -133,8 +156,16 @@ export function LibraryGridItem({
       {/* biome-ignore lint/a11y/noNoninteractiveTabindex: need focus for F2 rename */}
       <div
         ref={itemRef}
-        className="group relative flex cursor-default flex-col overflow-hidden rounded outline-none"
+        data-snap-id={snap.id}
+        className={`group relative flex cursor-default flex-col overflow-hidden rounded outline-none ring-offset-2 transition-shadow ${
+          selected
+            ? isAnchor
+              ? 'ring-2 ring-blue-500'
+              : 'ring-2 ring-blue-400/70'
+            : ''
+        }`}
         style={{ width: size }}
+        onClick={handleClick}
         onDoubleClick={handleDoubleClick}
         onContextMenu={handleContextMenu}
         onKeyDown={handleKeyDown}

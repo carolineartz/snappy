@@ -8,6 +8,12 @@ interface LibraryGridProps {
   snapTags: Map<string, string[]>;
   allTags: TagWithUsageCount[];
   getTagRecord: (tag: string) => Tag | undefined;
+  selectedIds: Set<string>;
+  anchorId: string | null;
+  onSelect: (
+    snapId: string,
+    modifiers: { shift: boolean; meta: boolean; ctrl: boolean },
+  ) => void;
   onOpen: (snapId: string) => void;
   onDelete: (snapId: string) => void;
   onDuplicate: (snapId: string) => void;
@@ -78,6 +84,9 @@ export function LibraryGrid({
   snapTags,
   allTags,
   getTagRecord,
+  selectedIds,
+  anchorId,
+  onSelect,
   onOpen,
   onDelete,
   onDuplicate,
@@ -109,6 +118,9 @@ export function LibraryGrid({
                 tags={snapTags.get(snap.id) || []}
                 allTags={allTags}
                 getTagRecord={getTagRecord}
+                selected={selectedIds.has(snap.id)}
+                isAnchor={anchorId === snap.id}
+                onSelect={onSelect}
                 onOpen={onOpen}
                 onDelete={onDelete}
                 onDuplicate={onDuplicate}

@@ -18,6 +18,20 @@ export const ZOOM_MAX = 500;
 export const ZOOM_DEFAULT = 180;
 const ZOOM_STORAGE_KEY = 'snappy:browser-zoom';
 
+/**
+ * Inspect the live DOM to find how many columns the current grid renders.
+ * The grid's actual column count depends on container width + zoom; rather
+ * than reimplement auto-fill math, read the computed CSS.
+ */
+function getGridColumnCount(): number {
+  const grid = document.querySelector<HTMLElement>(
+    'main [style*="grid-template-columns"]',
+  );
+  if (!grid) return 1;
+  const tpl = getComputedStyle(grid).gridTemplateColumns;
+  return Math.max(1, tpl.split(/\s+/).filter(Boolean).length);
+}
+
 function filterByTime(snaps: SnapItem[], filter: TimeFilter): SnapItem[] {
   if (filter === 'all') return snaps;
 
@@ -57,6 +71,12 @@ export function LibraryApp() {
   const searchBarRef = useRef<SearchBarHandle>(null);
   const gridScrollRef = useRef<HTMLElement>(null);
 
+  // Selection state (Finder-style): selectedIds is the current selection,
+  // anchorId is the pivot point for Shift+click range selection and also
+  // drives the visual "focused" outline distinct from additional members.
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [anchorId, setAnchorId] = useState<string | null>(null);
+
   // Auto-focus the search bar when the library opens.
   useEffect(() => {
     searchBarRef.current?.focus();
@@ -76,9 +96,23 @@ export function LibraryApp() {
   // Window-level shortcuts: Cmd+L focuses search, Esc clears or closes.
   // Reads state via refs so we always see the latest values, not the ones
   // captured when the listener was attached.
-  const latestStateRef = useRef({ chips, searchText });
-  useEffect(() => {
-    latestStateRef.current = { chips, searchText };
+  // Holds the most recent values the keyboard handler needs — populated by
+  // the effect below so we don't depend on stale closures (and so this ref
+  // can be declared before the state it mirrors).
+  const latestStateRef = useRef<{
+    chips: SearchChip[];
+    searchText: string;
+    selectedIds: Set<string>;
+    anchorId: string | null;
+    filteredSnaps: SnapItem[];
+    handleDeleteSelected: () => void | Promise<void>;
+  }>({
+    chips: [],
+    searchText: '',
+    selectedIds: new Set(),
+    anchorId: null,
+    filteredSnaps: [],
+    handleDeleteSelected: () => {},
   });
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -91,10 +125,95 @@ export function LibraryApp() {
         searchBarRef.current?.focus();
         return;
       }
+      // Cmd+A: select all visible snaps (unless a text field is focused).
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        !e.shiftKey &&
+        e.key.toLowerCase() === 'a'
+      ) {
+        const active = document.activeElement;
+        if (active instanceof HTMLInputElement) return;
+        e.preventDefault();
+        const ids = latestStateRef.current.filteredSnaps.map((s) => s.id);
+        setSelectedIds(new Set(ids));
+        setAnchorId(ids[0] ?? null);
+        return;
+      }
+      // Arrow navigation over the grid. Ignored while a text field has focus.
+      if (e.key.startsWith('Arrow')) {
+        const active = document.activeElement;
+        if (active instanceof HTMLInputElement) return;
+        const ids = latestStateRef.current.filteredSnaps.map((s) => s.id);
+        if (ids.length === 0) return;
+        const current = latestStateRef.current.anchorId ?? ids[0];
+        const idx = ids.indexOf(current);
+        const fromIdx = idx === -1 ? 0 : idx;
+
+        let nextIdx = fromIdx;
+        if (e.key === 'ArrowLeft') nextIdx = Math.max(0, fromIdx - 1);
+        else if (e.key === 'ArrowRight')
+          nextIdx = Math.min(ids.length - 1, fromIdx + 1);
+        else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+          const cols = getGridColumnCount();
+          nextIdx =
+            e.key === 'ArrowUp'
+              ? Math.max(0, fromIdx - cols)
+              : Math.min(ids.length - 1, fromIdx + cols);
+        }
+        if (nextIdx === fromIdx && idx !== -1) return;
+
+        e.preventDefault();
+        const nextId = ids[nextIdx];
+        if (e.shiftKey && latestStateRef.current.anchorId) {
+          const anchorIdx = ids.indexOf(latestStateRef.current.anchorId);
+          const [lo, hi] =
+            anchorIdx <= nextIdx ? [anchorIdx, nextIdx] : [nextIdx, anchorIdx];
+          setSelectedIds(new Set(ids.slice(lo, hi + 1)));
+        } else {
+          setSelectedIds(new Set([nextId]));
+          setAnchorId(nextId);
+        }
+        // Scroll the newly-focused snap into view.
+        requestAnimationFrame(() => {
+          const el = document.querySelector<HTMLElement>(
+            `[data-snap-id="${CSS.escape(nextId)}"]`,
+          );
+          el?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        });
+        return;
+      }
+      // Enter opens the anchored snap.
+      if (e.key === 'Enter') {
+        const active = document.activeElement;
+        if (active instanceof HTMLInputElement) return;
+        const anchor = latestStateRef.current.anchorId;
+        if (anchor) {
+          e.preventDefault();
+          window.snappy.library.openSnap(anchor);
+        }
+        return;
+      }
+      // Backspace (not Cmd/Ctrl): delete selected when grid is the focus,
+      // not when the search input is focused.
+      if (e.key === 'Backspace' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const active = document.activeElement;
+        if (active instanceof HTMLInputElement) return;
+        if (latestStateRef.current.selectedIds.size > 0) {
+          e.preventDefault();
+          latestStateRef.current.handleDeleteSelected();
+        }
+        return;
+      }
       if (e.key === 'Escape') {
         // A child may have already handled Esc (e.g. closing an autocomplete
         // popover); let that take precedence.
         if (e.defaultPrevented) return;
+        if (latestStateRef.current.selectedIds.size > 0) {
+          e.preventDefault();
+          setSelectedIds(new Set());
+          setAnchorId(null);
+          return;
+        }
         const { chips: latestChips, searchText: latestText } =
           latestStateRef.current;
         if (latestChips.length > 0 || latestText.length > 0) {
@@ -334,10 +453,65 @@ export function LibraryApp() {
   const handleDelete = useCallback(
     async (snapId: string) => {
       await window.snappy.library.deleteSnap(snapId);
+      setSelectedIds((prev) => {
+        if (!prev.has(snapId)) return prev;
+        const next = new Set(prev);
+        next.delete(snapId);
+        return next;
+      });
       loadSnaps();
     },
     [loadSnaps],
   );
+
+  // Finder-style selection. `modifiers` carries Shift / Meta / Ctrl so the
+  // handler can do range vs toggle vs single-select.
+  const handleSelect = useCallback(
+    (
+      snapId: string,
+      modifiers: { shift: boolean; meta: boolean; ctrl: boolean },
+    ) => {
+      const ids = filteredSnaps.map((s) => s.id);
+
+      if (modifiers.shift && anchorId) {
+        const start = ids.indexOf(anchorId);
+        const end = ids.indexOf(snapId);
+        if (start === -1 || end === -1) {
+          setSelectedIds(new Set([snapId]));
+          setAnchorId(snapId);
+          return;
+        }
+        const [lo, hi] = start <= end ? [start, end] : [end, start];
+        setSelectedIds(new Set(ids.slice(lo, hi + 1)));
+        return;
+      }
+
+      if (modifiers.meta || modifiers.ctrl) {
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          if (next.has(snapId)) next.delete(snapId);
+          else next.add(snapId);
+          return next;
+        });
+        setAnchorId(snapId);
+        return;
+      }
+
+      setSelectedIds(new Set([snapId]));
+      setAnchorId(snapId);
+    },
+    [filteredSnaps, anchorId],
+  );
+
+  const handleDeleteSelected = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    await Promise.all(
+      [...selectedIds].map((id) => window.snappy.library.deleteSnap(id)),
+    );
+    setSelectedIds(new Set());
+    setAnchorId(null);
+    loadSnaps();
+  }, [selectedIds, loadSnaps]);
 
   const handleDuplicate = useCallback(
     async (snapId: string) => {
@@ -346,6 +520,17 @@ export function LibraryApp() {
     },
     [loadSnaps],
   );
+
+  useEffect(() => {
+    latestStateRef.current = {
+      chips,
+      searchText,
+      selectedIds,
+      anchorId,
+      filteredSnaps,
+      handleDeleteSelected,
+    };
+  });
 
   return (
     <div className="flex h-screen bg-white text-neutral-800">
@@ -398,6 +583,9 @@ export function LibraryApp() {
               snapTags={snapTags}
               allTags={allTags}
               getTagRecord={getTagRecord}
+              selectedIds={selectedIds}
+              anchorId={anchorId}
+              onSelect={handleSelect}
               onOpen={handleOpen}
               onDelete={handleDelete}
               onDuplicate={handleDuplicate}
