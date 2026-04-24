@@ -18,10 +18,11 @@ export function openBrowserWindow(): BrowserWindow {
     ...BROWSER_WINDOW_CONFIG,
     title: 'Snappy Library',
     show: false,
-    // macOS Liquid Glass: vibrant material picks up the wallpaper behind
-    // the window; hiddenInset keeps the traffic lights visible but drops
-    // the title bar so our chrome can flow under it.
-    vibrancy: 'sidebar',
+    // macOS Liquid Glass: native material fills the window; hiddenInset
+    // keeps the rounded window mask + traffic lights without the title
+    // bar. `frame: false` is deliberately NOT set — it removes the mask
+    // that gives us rounded corners.
+    vibrancy: 'under-window',
     visualEffectState: 'active',
     backgroundColor: '#00000000',
     transparent: true,

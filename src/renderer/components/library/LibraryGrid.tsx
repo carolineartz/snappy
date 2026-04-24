@@ -97,7 +97,10 @@ export function LibraryGrid({
   return (
     <div className="p-4">
       {groups.map((group) => (
-        <div key={group.date} className="mb-6">
+        <div
+          key={group.date}
+          className="mb-5 rounded-2xl bg-white/30 p-4 ring-1 ring-black/5 dark:bg-neutral-900/20 dark:ring-white/5"
+        >
           {/* Date separator */}
           <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
             {group.label}

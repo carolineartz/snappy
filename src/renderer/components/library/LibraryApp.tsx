@@ -602,7 +602,7 @@ export function LibraryApp() {
   });
 
   return (
-    <div className="flex h-screen flex-col text-neutral-800">
+    <div className=" flex h-screen flex-col bg-transparent text-neutral-950 dark:text-neutral-100">
       {/* Draggable title bar strip — vertical space for the macOS traffic
           lights with hiddenInset; the whole strip is a drag region so the
           window can be moved by grabbing any empty pixel at the top. */}
@@ -612,7 +612,12 @@ export function LibraryApp() {
         style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
       />
 
-      <div className="flex min-h-0 flex-1">
+      <div
+        className="flex min-h-0 flex-1
+
+
+      "
+      >
         {/* Sidebar */}
         <FilterPanel
           timeFilter={timeFilter}

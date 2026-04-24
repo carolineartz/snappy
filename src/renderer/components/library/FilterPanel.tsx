@@ -158,7 +158,7 @@ export function FilterPanel({
       : filteredTags;
 
   return (
-    <div className="flex w-52 flex-shrink-0 flex-col border-r border-black/5 pt-2">
+    <div className="flex w-52 flex-shrink-0 flex-col pt-2">
       {/* Recent filters — fixed at top */}
       <div className="flex-shrink-0 px-3 pb-2">
         <h3 className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
@@ -178,7 +178,7 @@ export function FilterPanel({
         </ul>
       </div>
 
-      <div className="mx-3 border-t border-neutral-200" />
+      <div className="mx-3" />
 
       {/* Apps + Tags — shared scroll region, sections size to content */}
       <div ref={scrollRegionRef} className="min-h-0 flex-1 overflow-y-auto">
@@ -226,7 +226,7 @@ export function FilterPanel({
           </ul>
         </div>
 
-        <div className="mx-3 mt-2 border-t border-neutral-200" />
+        <div className="mt-3" />
 
         {/* Tags */}
         <div className="px-3 pt-2 pb-2">

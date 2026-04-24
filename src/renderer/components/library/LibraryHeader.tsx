@@ -24,7 +24,7 @@ export function LibraryHeader({
   };
 
   return (
-    <div className="flex items-center gap-3 border-b border-neutral-200 px-4 py-1.5">
+    <div className="flex items-center gap-3 px-4 py-2">
       <span className="flex-shrink-0 text-xs text-neutral-400">
         {snapCount} snap{snapCount !== 1 ? 's' : ''}
       </span>
