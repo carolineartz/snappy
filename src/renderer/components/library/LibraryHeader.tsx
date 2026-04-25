@@ -24,8 +24,8 @@ export function LibraryHeader({
   };
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2">
-      <span className="flex-shrink-0 text-xs text-neutral-400">
+    <div className="sticky top-0 z-10 flex items-center gap-3 px-4 py-2 backdrop-blur-xl backdrop-saturate-150">
+      <span className="flex-shrink-0 text-xs text-neutral-500 dark:text-neutral-400">
         {snapCount} snap{snapCount !== 1 ? 's' : ''}
       </span>
 
@@ -33,7 +33,7 @@ export function LibraryHeader({
 
       <div className="flex flex-shrink-0 items-center gap-3">
         {/* Zoom slider */}
-        <div className="flex items-center gap-1.5 text-neutral-400">
+        <div className="flex items-center gap-1.5 text-neutral-500 dark:text-neutral-500">
           <GridIcon small />
           <input
             type="range"
@@ -53,7 +53,7 @@ export function LibraryHeader({
           type="button"
           onClick={toggleDirection}
           title={sortDirection === 'desc' ? 'Newest first' : 'Oldest first'}
-          className="flex h-7 items-center gap-1 rounded px-2 text-[12px] text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
+          className="flex h-7 items-center gap-1 rounded-md px-2 text-[12px] text-neutral-600 transition-colors hover:bg-black/5 hover:text-neutral-800 dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-neutral-100"
         >
           <SortIcon direction={sortDirection} />
           <span>Date</span>

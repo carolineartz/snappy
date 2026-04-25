@@ -14,25 +14,37 @@ export function openBrowserWindow(): BrowserWindow {
     return browserWindow;
   }
 
+  // macOS Tahoe / Liquid Glass-style library window.
+  //
+  // - `titleBarStyle: 'hiddenInset'` hides the title bar but keeps native
+  //   traffic lights (with correct hover / fullscreen / disabled states
+  //   and a built-in drag region across the top strip).
+  // - `frame: false` + `transparent: true` + `backgroundColor: '#00000000'`
+  //   let the renderer own the full window shape. The CSS on
+  //   html.library-window draws our rounded / corner-smoothed clip.
+  // - `vibrancy: 'sidebar'` + `visualEffectState: 'active'` paints real
+  //   macOS sidebar material into the transparent regions, so the
+  //   sidebar column reads as true glass. The main column blocks
+  //   vibrancy with its own opaque background.
+  // - `roundedCorners: true` lets AppKit clip the whole window (including
+  //   vibrancy) into the system's default rounded shape. On macOS 26
+  //   Tahoe this is the larger Liquid-Glass-style radius (~22px). We
+  //   defer to AppKit instead of CSS so the vibrancy material gets
+  //   clipped along with the renderer content; CSS `border-radius` can
+  //   only clip the renderer, leaving vibrancy painting flat corners.
   const win = new BrowserWindow({
     ...BROWSER_WINDOW_CONFIG,
     title: 'Snappy Library',
     show: false,
-    // macOS Liquid Glass. `frame: false` lets us own the corner radius
-    // via CSS (the native mask caps us at ~10px, which is smaller than
-    // modern Tahoe apps). `titleBarStyle: 'hidden'` keeps the traffic
-    // lights while we supply our own chrome. `hasShadow: true` makes
-    // macOS draw the window shadow around the actually-opaque pixels,
-    // so it follows our CSS border-radius.
-    vibrancy: 'under-window',
-    visualEffectState: 'active',
-    backgroundColor: '#00000000',
-    transparent: true,
     frame: false,
-    titleBarStyle: 'hidden',
-    trafficLightPosition: { x: 16, y: 18 },
+    transparent: true,
+    backgroundColor: '#00000000',
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 18, y: 18 },
     hasShadow: true,
     roundedCorners: true,
+    vibrancy: 'sidebar',
+    visualEffectState: 'active',
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

@@ -72,17 +72,21 @@ function FilterRow({
     <button
       type="button"
       onClick={(e) => onClick(e)}
-      className={`flex w-full items-center gap-2 rounded px-2 py-1 text-left text-[13px] transition-colors ${
+      className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-[13px] transition-colors ${
         selected
           ? 'bg-blue-500 text-white'
-          : 'text-neutral-700 hover:bg-neutral-200/60'
+          : 'text-neutral-700 hover:bg-black/5 dark:text-neutral-200 dark:hover:bg-white/5'
       }`}
     >
       {leading}
       <span className="flex-1 truncate">{label}</span>
       {count !== undefined && (
         <span
-          className={`text-[11px] ${selected ? 'text-blue-100' : 'text-neutral-400'}`}
+          className={`text-[11px] ${
+            selected
+              ? 'text-blue-100'
+              : 'text-neutral-400 dark:text-neutral-500'
+          }`}
         >
           {count}
         </span>
@@ -158,10 +162,10 @@ export function FilterPanel({
       : filteredTags;
 
   return (
-    <div className="flex w-52 flex-shrink-0 flex-col pt-2">
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* Recent filters — fixed at top */}
-      <div className="flex-shrink-0 px-3 pb-2">
-        <h3 className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+      <div className="flex-shrink-0 px-3 pt-1 pb-2">
+        <h3 className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
           Recent
         </h3>
         <ul>

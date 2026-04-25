@@ -173,7 +173,7 @@ export function LibraryGridItem({
       >
         {/* Image container */}
         <div
-          className="relative flex items-center justify-center bg-neutral-100 ring-1 ring-black/[0.06]"
+          className="relative flex items-center justify-center bg-neutral-100 ring-1 ring-black/[0.06] dark:bg-neutral-800 dark:ring-white/10"
           style={{ width: size, height: size }}
         >
           {imgSrc ? (
@@ -184,7 +184,7 @@ export function LibraryGridItem({
               draggable={false}
             />
           ) : (
-            <div className="h-full w-full bg-neutral-200" />
+            <div className="h-full w-full bg-neutral-200 dark:bg-neutral-700" />
           )}
 
           {snap.isOpen === 1 && (
@@ -249,7 +249,7 @@ export function LibraryGridItem({
             />
           ) : (
             <p
-              className="truncate text-center text-[11px] text-neutral-500"
+              className="truncate text-center text-[11px] text-neutral-500 dark:text-neutral-400"
               title={displayName(snap)}
             >
               {displayName(snap)}
@@ -293,7 +293,7 @@ export function LibraryGridItem({
           {/* biome-ignore lint/a11y/noStaticElementInteractions: menu panel */}
           {/* biome-ignore lint/a11y/useKeyWithClickEvents: menu panel */}
           <div
-            className="absolute min-w-[140px] rounded-lg border border-neutral-200 bg-white/95 py-1 shadow-xl backdrop-blur-md"
+            className="absolute min-w-[140px] rounded-lg border border-neutral-200 bg-white/95 py-1 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-neutral-800/95 dark:text-neutral-200"
             style={{ left: contextMenu.x, top: contextMenu.y }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -356,8 +356,8 @@ function ContextMenuItem({
       onClick={onClick}
       className={`flex w-full px-3 py-1 text-left text-[13px] transition-colors ${
         danger
-          ? 'text-red-600 hover:bg-red-500 hover:text-white'
-          : 'text-neutral-700 hover:bg-blue-500 hover:text-white'
+          ? 'text-red-600 hover:bg-red-500 hover:text-white dark:text-red-400'
+          : 'text-neutral-700 hover:bg-blue-500 hover:text-white dark:text-neutral-200'
       }`}
     >
       {label}

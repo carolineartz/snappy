@@ -27,7 +27,7 @@ export function FilterSectionTitle({
   return (
     <div>
       <div className="flex items-center justify-between px-2">
-        <h3 className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+        <h3 className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
           {label}
         </h3>
         <button
@@ -36,8 +36,8 @@ export function FilterSectionTitle({
           title={`Search ${label.toLowerCase()}`}
           className={`flex h-5 w-5 items-center justify-center rounded transition-colors ${
             searchOpen || searchValue
-              ? 'text-neutral-600'
-              : 'text-neutral-300 hover:text-neutral-500'
+              ? 'text-neutral-600 dark:text-neutral-300'
+              : 'text-neutral-300 hover:text-neutral-500 dark:text-neutral-500 dark:hover:text-neutral-300'
           }`}
         >
           <SearchIcon />
@@ -61,7 +61,7 @@ export function FilterSectionTitle({
               }
             }}
             placeholder={`Filter ${label.toLowerCase()}...`}
-            className="w-full rounded border border-neutral-200 bg-white px-1.5 py-0.5 text-[11px] text-neutral-700 outline-none focus:border-blue-400"
+            className="w-full rounded border border-neutral-200 bg-white/80 px-1.5 py-0.5 text-[11px] text-neutral-700 outline-none focus:border-blue-400 dark:border-white/10 dark:bg-white/5 dark:text-neutral-200"
           />
         </div>
       )}

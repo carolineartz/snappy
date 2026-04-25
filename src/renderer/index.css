@@ -3,8 +3,11 @@
 /*
  * The library window is frameless + transparent so we can set our own
  * corner radius (bigger than macOS's native ~10px cap). overflow: hidden
- * clips the vibrancy layer to match; hasShadow on the window means macOS
- * draws the drop-shadow around this rounded rect automatically.
+ * clips the content to match; hasShadow on the window means macOS draws
+ * the drop-shadow around this rounded rect automatically.
+ *
+ * Non-library windows stay transparent (tray, snap, menu windows own
+ * their own backgrounds).
  */
 html,
 body,
@@ -13,10 +16,38 @@ body,
   height: 100%;
 }
 
+/*
+ * Apply Apple-style continuous (squircle) corner smoothing to every
+ * element that has a `border-radius`. -electron-corner-smoothing is a
+ * no-op in non-Electron browsers and on elements without a radius, so
+ * this is safe to apply globally. Requires Electron 37+.
+ */
+*,
+*::before,
+*::after {
+  -electron-corner-smoothing: system-ui;
+}
+
+/*
+ * Library window: frameless + transparent with real macOS vibrancy
+ * (sidebar material) painted behind everything by the OS. The renderer
+ * keeps html/body transparent so the vibrancy shows through the
+ * sidebar; the main content column sets its own opaque background
+ * (Tailwind) to hide vibrancy on that half.
+ */
+/*
+ * The window's outer rounded shape is owned by AppKit (`roundedCorners:
+ * true` in browser-window.ts). We don't set `border-radius` on the
+ * renderer root because CSS would only clip the renderer's content —
+ * vibrancy is painted at the window level and would still paint flat
+ * corners. Letting AppKit clip everything keeps the shape consistent.
+ *
+ * `overflow: hidden` is still useful so children don't visually escape
+ * the renderer's painted region during transitions.
+ */
 html.library-window,
 html.library-window body,
 html.library-window #root {
-  border-radius: 16px;
   overflow: hidden;
 }
 

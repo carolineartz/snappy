@@ -95,14 +95,14 @@ export function LibraryGrid({
   const groups = groupByDate(snaps);
 
   return (
-    <div className="p-4">
+    <div className="p-4 pb-8">
       {groups.map((group) => (
         <div
           key={group.date}
-          className="mb-5 rounded-2xl bg-white/30 p-4 ring-1 ring-black/5 dark:bg-neutral-900/20 dark:ring-white/5"
+          className="mb-5 rounded-2xl bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03),0_8px_20px_-8px_rgba(0,0,0,0.06)] dark:bg-[#2a2a2c] dark:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_8px_20px_-8px_rgba(0,0,0,0.35)]"
         >
           {/* Date separator */}
-          <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+          <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
             {group.label}
           </h2>
 

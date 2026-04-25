@@ -602,23 +602,18 @@ export function LibraryApp() {
   });
 
   return (
-    <div className=" flex h-screen flex-col bg-transparent text-neutral-950 dark:text-neutral-100">
-      {/* Draggable title bar strip — vertical space for the macOS traffic
-          lights with hiddenInset; the whole strip is a drag region so the
-          window can be moved by grabbing any empty pixel at the top. */}
-      {/* biome-ignore lint/a11y/useSemanticElements: decorative drag region */}
-      <div
-        className="h-[38px] flex-shrink-0"
-        style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
-      />
-
-      <div
-        className="flex min-h-0 flex-1
-
-
-      "
-      >
-        {/* Sidebar */}
+    <div className="flex h-screen text-neutral-900 dark:text-neutral-100">
+      {/* Sidebar column — fully transparent so the window's native
+          vibrancy material (set in browser-window.ts) shows through as
+          real macOS sidebar glass. The 38px drag strip on top leaves
+          room for native traffic lights; hiddenInset handles the no-drag
+          zones so the buttons stay clickable without extra CSS. */}
+      <aside className="flex w-60 flex-shrink-0 flex-col">
+        {/* biome-ignore lint/a11y/useSemanticElements: decorative drag region */}
+        <div
+          className="h-[38px] flex-shrink-0"
+          style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
+        />
         <FilterPanel
           timeFilter={timeFilter}
           onTimeFilterChange={setTimeFilter}
@@ -634,53 +629,59 @@ export function LibraryApp() {
           }
           totalCount={snaps.length}
         />
+      </aside>
 
-        {/* Main content */}
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <LibraryHeader
-            sortDirection={sortDirection}
-            onSortDirectionChange={setSortDirection}
-            snapCount={filteredSnaps.length}
+      {/* Main content — opaque canvas (blocks the vibrancy on this half)
+          with a single scroll region. The sticky header inside has no
+          background or border: just a backdrop-blur, so content visibly
+          scrolls under it as a floating pane. */}
+      <main
+        ref={gridScrollRef}
+        className="min-w-0 flex-1 overflow-y-auto bg-[#f7f7f5] dark:bg-[#1c1c1e]"
+      >
+        <LibraryHeader
+          sortDirection={sortDirection}
+          onSortDirectionChange={setSortDirection}
+          snapCount={filteredSnaps.length}
+          zoom={zoom}
+          onZoomChange={handleZoomChange}
+          search={
+            <SearchBar
+              ref={searchBarRef}
+              chips={chips}
+              text={searchText}
+              onTextChange={setSearchText}
+              onAddChip={toggleChip}
+              onRemoveChip={removeChip}
+              allTags={allTags}
+              sourceApps={sourceApps}
+              getTagRecord={getTagRecord}
+            />
+          }
+        />
+        {filteredSnaps.length === 0 ? (
+          <div className="flex h-[calc(100%-48px)] items-center justify-center">
+            <p className="text-neutral-400 dark:text-neutral-500">
+              No snaps match your filters
+            </p>
+          </div>
+        ) : (
+          <LibraryGrid
+            snaps={filteredSnaps}
             zoom={zoom}
-            onZoomChange={handleZoomChange}
-            search={
-              <SearchBar
-                ref={searchBarRef}
-                chips={chips}
-                text={searchText}
-                onTextChange={setSearchText}
-                onAddChip={toggleChip}
-                onRemoveChip={removeChip}
-                allTags={allTags}
-                sourceApps={sourceApps}
-                getTagRecord={getTagRecord}
-              />
-            }
+            snapTags={snapTags}
+            allTags={allTags}
+            getTagRecord={getTagRecord}
+            selectedIds={selectedIds}
+            anchorId={anchorId}
+            onSelect={handleSelect}
+            onOpen={handleOpen}
+            onDelete={handleDelete}
+            onDuplicate={handleDuplicate}
+            onTagsChanged={loadTags}
           />
-          <main ref={gridScrollRef} className="flex-1 overflow-y-auto">
-            {filteredSnaps.length === 0 ? (
-              <div className="flex h-full items-center justify-center">
-                <p className="text-neutral-400">No snaps match your filters</p>
-              </div>
-            ) : (
-              <LibraryGrid
-                snaps={filteredSnaps}
-                zoom={zoom}
-                snapTags={snapTags}
-                allTags={allTags}
-                getTagRecord={getTagRecord}
-                selectedIds={selectedIds}
-                anchorId={anchorId}
-                onSelect={handleSelect}
-                onOpen={handleOpen}
-                onDelete={handleDelete}
-                onDuplicate={handleDuplicate}
-                onTagsChanged={loadTags}
-              />
-            )}
-          </main>
-        </div>
-      </div>
+        )}
+      </main>
 
       {isPreviewOpen &&
         anchorId &&

@@ -197,8 +197,8 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(
           onClick={() => inputRef.current?.focus()}
           className={`flex min-h-[26px] flex-wrap items-center gap-1 rounded-md border px-2 py-0.5 transition-colors ${
             isFocused
-              ? 'border-blue-400 bg-white'
-              : 'border-neutral-200 bg-neutral-50/80'
+              ? 'border-blue-400 bg-white dark:border-blue-500 dark:bg-white/10'
+              : 'border-transparent bg-black/[0.04] dark:border-transparent dark:bg-white/5'
           }`}
         >
           {chips.map((chip) => (
@@ -220,7 +220,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(
             placeholder={
               chips.length === 0 ? 'Search — or name: text: tag: app:…' : ''
             }
-            className="min-w-[80px] flex-1 bg-transparent py-0.5 text-[12px] text-neutral-800 outline-none placeholder:text-neutral-400"
+            className="min-w-[80px] flex-1 bg-transparent py-0.5 text-[12px] text-neutral-800 outline-none placeholder:text-neutral-400 dark:text-neutral-100 dark:placeholder:text-neutral-500"
           />
         </div>
         {popoverOpen && (
@@ -263,7 +263,7 @@ function SearchChipPill({
   }
 
   return (
-    <span className="flex items-center gap-1 rounded bg-neutral-200/70 py-0.5 pr-0.5 pl-1.5 text-[11px] text-neutral-700">
+    <span className="flex items-center gap-1 rounded bg-neutral-200/70 py-0.5 pr-0.5 pl-1.5 text-[11px] text-neutral-700 dark:bg-white/10 dark:text-neutral-200">
       {leading}
       <span>{chip.value}</span>
       <button
@@ -272,7 +272,7 @@ function SearchChipPill({
           e.preventDefault();
           onRemove();
         }}
-        className="flex h-3.5 w-3.5 items-center justify-center rounded text-neutral-500 hover:bg-neutral-300 hover:text-neutral-800"
+        className="flex h-3.5 w-3.5 items-center justify-center rounded text-neutral-500 hover:bg-neutral-300 hover:text-neutral-800 dark:text-neutral-400 dark:hover:bg-white/10 dark:hover:text-neutral-100"
         aria-label={`Remove ${chip.value}`}
       >
         ×
