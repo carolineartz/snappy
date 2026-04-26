@@ -17,9 +17,9 @@ export type SearchChip =
 export const ZOOM_MIN = 120;
 export const ZOOM_MAX = 500;
 export const ZOOM_DEFAULT = 180;
-const ZOOM_STORAGE_KEY = 'snappy:browser-zoom';
-const SORT_FIELD_STORAGE_KEY = 'snappy:sort-field';
-const SORT_DIRECTION_STORAGE_KEY = 'snappy:sort-direction';
+const ZOOM_STORAGE_KEY = 'snap:browser-zoom';
+const SORT_FIELD_STORAGE_KEY = 'snap:sort-field';
+const SORT_DIRECTION_STORAGE_KEY = 'snap:sort-direction';
 
 function snapDateKey(snap: SnapItem, field: SortField): string {
   const d = new Date(getSortTimestamp(snap, field));
@@ -253,7 +253,7 @@ export function LibraryApp() {
         const anchor = latestStateRef.current.anchorId;
         if (anchor) {
           e.preventDefault();
-          window.snappy.library.openSnap(anchor);
+          window.snap.library.openSnap(anchor);
         }
         return;
       }
@@ -301,20 +301,20 @@ export function LibraryApp() {
   }, []);
 
   const loadSnaps = useCallback(async () => {
-    const data = (await window.snappy.library.getSnaps()) as SnapItem[];
+    const data = (await window.snap.library.getSnaps()) as SnapItem[];
     setSnaps(data);
   }, []);
 
   const loadTags = useCallback(async () => {
-    const tags = await window.snappy.library.getAllTags();
+    const tags = await window.snap.library.getAllTags();
     setAllTags(tags);
 
     // Load per-snap tags
-    const data = (await window.snappy.library.getSnaps()) as SnapItem[];
+    const data = (await window.snap.library.getSnaps()) as SnapItem[];
     const tagMap = new Map<string, string[]>();
     await Promise.all(
       data.map(async (snap) => {
-        const t = await window.snappy.library.getTagsForSnap(snap.id);
+        const t = await window.snap.library.getTagsForSnap(snap.id);
         if (t.length > 0) tagMap.set(snap.id, t);
       }),
     );
@@ -324,7 +324,7 @@ export function LibraryApp() {
   useEffect(() => {
     loadSnaps();
     loadTags();
-    window.snappy.library.onSnapsUpdated(() => {
+    window.snap.library.onSnapsUpdated(() => {
       loadSnaps();
       loadTags();
     });
@@ -404,7 +404,7 @@ export function LibraryApp() {
     }
     const token = ++clipTokenRef.current;
     const t = setTimeout(() => {
-      window.snappy.library.searchByText(q, 0.2).then((results) => {
+      window.snap.library.searchByText(q, 0.2).then((results) => {
         if (token !== clipTokenRef.current) return;
         setClipScores(new Map(results.map((r) => [r.snapId, r.score])));
       });
@@ -536,7 +536,7 @@ export function LibraryApp() {
 
   const handleOpen = useCallback(
     async (snapId: string) => {
-      await window.snappy.library.openSnap(snapId);
+      await window.snap.library.openSnap(snapId);
       loadSnaps();
     },
     [loadSnaps],
@@ -544,7 +544,7 @@ export function LibraryApp() {
 
   const handleDelete = useCallback(
     async (snapId: string) => {
-      await window.snappy.library.deleteSnap(snapId);
+      await window.snap.library.deleteSnap(snapId);
       setSelectedIds((prev) => {
         if (!prev.has(snapId)) return prev;
         const next = new Set(prev);
@@ -598,7 +598,7 @@ export function LibraryApp() {
   const handleDeleteSelected = useCallback(async () => {
     if (selectedIds.size === 0) return;
     await Promise.all(
-      [...selectedIds].map((id) => window.snappy.library.deleteSnap(id)),
+      [...selectedIds].map((id) => window.snap.library.deleteSnap(id)),
     );
     setSelectedIds(new Set());
     setAnchorId(null);
@@ -607,7 +607,7 @@ export function LibraryApp() {
 
   const handleDuplicate = useCallback(
     async (snapId: string) => {
-      await window.snappy.snap.duplicate(snapId);
+      await window.snap.snap.duplicate(snapId);
       loadSnaps();
     },
     [loadSnaps],

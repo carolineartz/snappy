@@ -28,14 +28,14 @@ describe('SnapViewer', () => {
 
     const img = await screen.findByAltText('Screenshot');
     expect(img).toHaveAttribute('src', 'data:image/png;base64,fake');
-    expect(window.snappy.snap.readImage).toHaveBeenCalledWith(TEST_FILE_PATH);
+    expect(window.snap.snap.readImage).toHaveBeenCalledWith(TEST_FILE_PATH);
   });
 
   it('does not load image when filePath is missing', () => {
     setFilePath(null);
     render(<SnapViewer />);
 
-    expect(window.snappy.snap.readImage).not.toHaveBeenCalled();
+    expect(window.snap.snap.readImage).not.toHaveBeenCalled();
     expect(screen.queryByAltText('Screenshot')).not.toBeInTheDocument();
   });
 
@@ -45,7 +45,7 @@ describe('SnapViewer', () => {
 
     fireEvent.keyDown(window, { key: 'c', metaKey: true });
 
-    expect(window.snappy.snap.copy).toHaveBeenCalledWith(TEST_FILE_PATH);
+    expect(window.snap.snap.copy).toHaveBeenCalledWith(TEST_FILE_PATH);
   });
 
   it('does not copy without meta key', async () => {
@@ -54,7 +54,7 @@ describe('SnapViewer', () => {
 
     fireEvent.keyDown(window, { key: 'c' });
 
-    expect(window.snappy.snap.copy).not.toHaveBeenCalled();
+    expect(window.snap.snap.copy).not.toHaveBeenCalled();
   });
 
   it('toggles shadow on Cmd+P', async () => {
@@ -63,7 +63,7 @@ describe('SnapViewer', () => {
 
     fireEvent.keyDown(window, { key: 'p', metaKey: true });
 
-    expect(window.snappy.snap.toggleShadow).toHaveBeenCalled();
+    expect(window.snap.snap.toggleShadow).toHaveBeenCalled();
   });
 
   it('closes on double click', async () => {
@@ -74,7 +74,7 @@ describe('SnapViewer', () => {
     const container = screen.getByAltText('Screenshot').parentElement!;
     await user.dblClick(container);
 
-    expect(window.snappy.snap.close).toHaveBeenCalled();
+    expect(window.snap.snap.close).toHaveBeenCalled();
   });
 
   it('opens context menu popup on right click', async () => {
@@ -85,7 +85,7 @@ describe('SnapViewer', () => {
     const container = screen.getByAltText('Screenshot').parentElement!;
     await user.pointer({ keys: '[MouseRight]', target: container });
 
-    expect(window.snappy.snap.openMenu).toHaveBeenCalled();
+    expect(window.snap.snap.openMenu).toHaveBeenCalled();
   });
 
   it('adjusts opacity on wheel scroll down (more transparent)', async () => {
@@ -97,7 +97,7 @@ describe('SnapViewer', () => {
       fireEvent.wheel(container, { deltaY: 100 });
     });
 
-    expect(window.snappy.snap.setOpacity).toHaveBeenCalledWith(0.95);
+    expect(window.snap.snap.setOpacity).toHaveBeenCalledWith(0.95);
   });
 
   it('adjusts opacity on wheel scroll up (more opaque)', async () => {
@@ -110,7 +110,7 @@ describe('SnapViewer', () => {
       fireEvent.wheel(container, { deltaY: -100 });
     });
 
-    expect(window.snappy.snap.setOpacity).toHaveBeenLastCalledWith(1);
+    expect(window.snap.snap.setOpacity).toHaveBeenLastCalledWith(1);
   });
 
   it('clamps opacity to minimum 0.05', async () => {
@@ -124,7 +124,7 @@ describe('SnapViewer', () => {
       }
     });
 
-    const calls = vi.mocked(window.snappy.snap.setOpacity).mock.calls;
+    const calls = vi.mocked(window.snap.snap.setOpacity).mock.calls;
     const lastOpacity = calls[calls.length - 1][0];
     expect(lastOpacity).toBeCloseTo(0.05);
   });
@@ -138,7 +138,7 @@ describe('SnapViewer', () => {
     fireEvent.pointerMove(container, { screenX: 110, screenY: 215 });
     fireEvent.pointerUp(container);
 
-    expect(window.snappy.snap.move).toHaveBeenCalledWith(10, 15);
+    expect(window.snap.snap.move).toHaveBeenCalledWith(10, 15);
   });
 
   it('does not move on right-button drag', async () => {
@@ -150,6 +150,6 @@ describe('SnapViewer', () => {
     fireEvent.pointerMove(container, { screenX: 110, screenY: 215 });
     fireEvent.pointerUp(container);
 
-    expect(window.snappy.snap.move).not.toHaveBeenCalled();
+    expect(window.snap.snap.move).not.toHaveBeenCalled();
   });
 });

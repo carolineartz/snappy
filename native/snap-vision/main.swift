@@ -1,8 +1,8 @@
-// snappy-vision: multimodal on-device vision helper for Snappy.
+// snap-vision: multimodal on-device vision helper for Snap.
 //
 // Usage:
-//   snappy-vision image <image-path> <models-dir> <resources-dir>
-//   snappy-vision text  <query>      <models-dir> <resources-dir>
+//   snap-vision image <image-path> <models-dir> <resources-dir>
+//   snap-vision text  <query>      <models-dir> <resources-dir>
 //
 // `image` mode runs OCR + VNClassifyImageRequest + MobileCLIP image encoder
 // on the image and emits a JSON document on stdout:
@@ -28,15 +28,15 @@ let stderr = FileHandle.standardError
 let stdout = FileHandle.standardOutput
 
 func die(_ message: String, code: Int32 = 1) -> Never {
-  stderr.write(Data("snappy-vision: \(message)\n".utf8))
+  stderr.write(Data("snap-vision: \(message)\n".utf8))
   exit(code)
 }
 
 func usage() -> Never {
   die(
     """
-    usage: snappy-vision image <image-path> <models-dir> <resources-dir>
-           snappy-vision text  <query>      <models-dir> <resources-dir>
+    usage: snap-vision image <image-path> <models-dir> <resources-dir>
+           snap-vision text  <query>      <models-dir> <resources-dir>
     """,
     code: 64)
 }

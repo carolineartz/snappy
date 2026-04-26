@@ -63,10 +63,10 @@ export function LibraryGridItem({
 
   useEffect(() => {
     let cancelled = false;
-    window.snappy.library.readThumbnail(snap.thumbPath).then((src) => {
+    window.snap.library.readThumbnail(snap.thumbPath).then((src) => {
       if (!cancelled) setThumbSrc(src);
     });
-    window.snappy.snap.readImage(snap.filePath).then((src) => {
+    window.snap.snap.readImage(snap.filePath).then((src) => {
       if (!cancelled) setFullSrc(src);
     });
     return () => {
@@ -115,7 +115,7 @@ export function LibraryGridItem({
 
   const commitRename = () => {
     const trimmed = renameValue.trim();
-    window.snappy.library.renameSnap(snap.id, trimmed || null);
+    window.snap.library.renameSnap(snap.id, trimmed || null);
     setIsRenaming(false);
   };
 
@@ -128,12 +128,12 @@ export function LibraryGridItem({
   };
 
   const handleAssignTag = (snapId: string, name: string) => {
-    window.snappy.library.addTag(snapId, name);
+    window.snap.library.addTag(snapId, name);
     onTagsChanged();
   };
 
   const handleUnassignTag = (snapId: string, name: string) => {
-    window.snappy.library.removeTag(snapId, name);
+    window.snap.library.removeTag(snapId, name);
     onTagsChanged();
   };
 

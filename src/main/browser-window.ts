@@ -34,7 +34,7 @@ export function openBrowserWindow(): BrowserWindow {
   //   only clip the renderer, leaving vibrancy painting flat corners.
   const win = new BrowserWindow({
     ...BROWSER_WINDOW_CONFIG,
-    title: 'Snappy Library',
+    title: 'Snap Library',
     show: false,
     frame: false,
     transparent: true,

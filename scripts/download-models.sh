@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Downloads Apple's MobileCLIP-S1 CoreML packages (image + text encoders)
-# and the CLIP tokenizer resources used by the snappy-vision Swift helper.
+# and the CLIP tokenizer resources used by the snap-vision Swift helper.
 #
 # ~85MB total. Re-runs are idempotent — existing files are skipped.
 
@@ -8,7 +8,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 MODELS_DIR="$ROOT/native/models"
-RESOURCES_DIR="$ROOT/native/snappy-vision/Resources"
+RESOURCES_DIR="$ROOT/native/snap-vision/Resources"
 HF_BASE="https://huggingface.co/apple/coreml-mobileclip/resolve/main"
 APPLE_TOKENIZER_BASE="https://raw.githubusercontent.com/apple/ml-mobileclip/main/ios_app/MobileCLIPExplore/Resources"
 

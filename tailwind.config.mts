@@ -5,7 +5,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        snappy: {
+        snap: {
           bg: '#1a1a2e',
           surface: '#16213e',
           accent: '#0f3460',

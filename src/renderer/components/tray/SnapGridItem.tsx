@@ -30,7 +30,7 @@ export function SnapGridItem({ snap, onOpen, onDelete }: SnapGridItemProps) {
   const [thumbSrc, setThumbSrc] = useState<string | null>(null);
 
   useEffect(() => {
-    window.snappy.library.readThumbnail(snap.thumbPath).then((src) => {
+    window.snap.library.readThumbnail(snap.thumbPath).then((src) => {
       setThumbSrc(src);
     });
   }, [snap.thumbPath, snap.thumbnailUpdatedAt]);

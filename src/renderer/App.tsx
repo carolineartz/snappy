@@ -6,29 +6,29 @@ export function App() {
   const [snaps, setSnaps] = useState<SnapItem[]>([]);
 
   const loadSnaps = useCallback(async () => {
-    const data = (await window.snappy.library.getSnaps()) as SnapItem[];
+    const data = (await window.snap.library.getSnaps()) as SnapItem[];
     setSnaps(data);
   }, []);
 
   useEffect(() => {
     loadSnaps();
-    window.snappy.library.onSnapsUpdated(loadSnaps);
+    window.snap.library.onSnapsUpdated(loadSnaps);
   }, [loadSnaps]);
 
   const handleOpen = async (snapId: string) => {
-    await window.snappy.library.openSnap(snapId);
+    await window.snap.library.openSnap(snapId);
     loadSnaps();
   };
 
   const handleDelete = async (snapId: string) => {
-    await window.snappy.library.deleteSnap(snapId);
+    await window.snap.library.deleteSnap(snapId);
     loadSnaps();
   };
 
   return (
     <div className="flex h-screen flex-col bg-white text-neutral-800">
       <header className="flex items-center justify-between border-b border-neutral-200 px-4 py-2">
-        <h1 className="text-sm font-semibold text-neutral-700">Snappy</h1>
+        <h1 className="text-sm font-semibold text-neutral-700">Snap</h1>
         <span className="text-xs text-neutral-400">
           {snaps.length} snap{snaps.length !== 1 ? 's' : ''}
         </span>
@@ -53,7 +53,7 @@ export function App() {
         <button
           type="button"
           className="w-full rounded-md border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
-          onClick={() => window.snappy.library.openBrowserWindow()}
+          onClick={() => window.snap.library.openBrowserWindow()}
         >
           Snaps Library
         </button>

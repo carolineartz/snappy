@@ -1,4 +1,4 @@
-export const APP_NAME = 'Snappy';
+export const APP_NAME = 'Snap';
 
 export const TRAY_ICON_SIZE = 22;
 

@@ -24,16 +24,16 @@ function getPaths() {
   if (app.isPackaged) {
     const resources = process.resourcesPath;
     return {
-      bin: path.join(resources, 'snappy-vision'),
+      bin: path.join(resources, 'snap-vision'),
       models: path.join(resources, 'models'),
       clipResources: path.join(resources, 'clip-resources'),
     };
   }
   const root = path.join(__dirname, '..');
   return {
-    bin: path.join(root, 'build-native', 'snappy-vision'),
+    bin: path.join(root, 'build-native', 'snap-vision'),
     models: path.join(root, 'native', 'models'),
-    clipResources: path.join(root, 'native', 'snappy-vision', 'Resources'),
+    clipResources: path.join(root, 'native', 'snap-vision', 'Resources'),
   };
 }
 

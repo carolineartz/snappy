@@ -27,7 +27,7 @@ interface MenuActionPayload {
   value?: unknown;
 }
 
-const snappyAPI = {
+const snapAPI = {
   app: {
     quit: () => ipcRenderer.send(EVENTS.APP_QUIT),
     version: () => ipcRenderer.invoke(EVENTS.APP_VERSION) as Promise<string>,
@@ -109,6 +109,6 @@ const snappyAPI = {
   },
 };
 
-contextBridge.exposeInMainWorld('snappy', snappyAPI);
+contextBridge.exposeInMainWorld('snap', snapAPI);
 
-export type SnappyAPI = typeof snappyAPI;
+export type SnapAPI = typeof snapAPI;

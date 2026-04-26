@@ -127,7 +127,7 @@ export function createMenubar(): void {
   // Custom tray hide logic — tray stays open when interacting with
   // floating snaps or the annotation menu, but CLOSES when focus goes
   // to the library browser window (or anything outside the app).
-  function isSnappyWindow(win: BrowserWindow | null): boolean {
+  function isSnapWindow(win: BrowserWindow | null): boolean {
     if (!win) return false;
     if (win.id === mb.window?.id) return true;
     if (win.id === getMenuWindow()?.id) return true;
@@ -139,7 +139,7 @@ export function createMenubar(): void {
   function hideTrayIfFocusLeft(): void {
     setTimeout(() => {
       const focused = BrowserWindow.getFocusedWindow();
-      if (!isSnappyWindow(focused) && mb.window?.isVisible()) {
+      if (!isSnapWindow(focused) && mb.window?.isVisible()) {
         mb.hideWindow();
       }
     }, 50);

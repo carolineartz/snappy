@@ -1,4 +1,4 @@
-# Snappy — Architecture & Conventions
+# Snap — Architecture & Conventions
 
 This is a personal macOS menubar screenshot app. Structure and conventions follow the [Gitify](https://github.com/gitify-app/gitify) reference architecture.
 
@@ -27,7 +27,7 @@ src/
 │       └── tray.ts               # createMenubar(), tray hide logic, shortcuts
 │
 ├── preload/
-│   └── index.ts                  # contextBridge API exposed as window.snappy
+│   └── index.ts                  # contextBridge API exposed as window.snap
 │
 ├── shared/                       # Types & constants used by both main and renderer
 │   ├── constants.ts              # APP_NAME, WINDOW_CONFIG, CAPTURE_SHORTCUT, etc.
@@ -41,7 +41,7 @@ src/
     ├── index.tsx, index.html     # Tray entry point
     ├── index.css                 # Tailwind + global styles
     ├── types.ts                  # SnapItem and other cross-domain types
-    ├── global.d.ts               # window.snappy type declarations
+    ├── global.d.ts               # window.snap type declarations
     │
     ├── tray/                     # THIN entry point — index.html + index.tsx only
     ├── library/                  # THIN entry point for library window
@@ -58,7 +58,7 @@ src/
     ├── hooks/                    # Custom React hooks (useAnnotations, etc.)
     │
     └── __helpers__/              # Test infrastructure
-        └── setup.ts              # Vitest setup, window.snappy mocks
+        └── setup.ts              # Vitest setup, window.snap mocks
 ```
 
 ## Conventions
@@ -122,7 +122,7 @@ Snaps are stored in SQLite via `better-sqlite3`:
 - `snaps` table — id, name, filePath, thumbPath, sourceApp, width, height, posX, posY, opacity, hasShadow, isOpen, createdAt, annotations (JSON), thumbnailUpdatedAt
 - `snap_tags` table — (snap_id, tag) composite key with cascade delete on snap
 
-Images live at `~/Library/Application Support/snappy/snaps/` with thumbnails at `snaps/thumbs/`.
+Images live at `~/Library/Application Support/Snap/snaps/` with thumbnails at `snaps/thumbs/`.
 
 ## Window lifecycle
 
@@ -133,7 +133,7 @@ Four window types:
 3. **Context menu popup** (transient) — small popup for snap's context menu, shows MenuApp
 4. **Library browser** (singleton) — standard macOS window, resizable, shows LibraryApp
 
-All windows share a preload script that exposes `window.snappy` with typed APIs.
+All windows share a preload script that exposes `window.snap` with typed APIs.
 
 ## Key patterns
 
@@ -165,4 +165,4 @@ Gitify is the architectural reference: `~/Projects/examples/gitify`. When in dou
 - `pnpm lint` — Biome lint with auto-fix
 - `npx tsc --noEmit` — type check
 
-Kill stale Electron processes before restarting: `pkill -f "electron@34.5.8.*Electron"`
+Kill stale Electron processes before restarting: `pkill -f "Electron"`

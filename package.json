@@ -1,5 +1,5 @@
 {
-  "name": "snappy",
+  "name": "snap",
   "version": "0.2.1",
   "description": "A floating screenshot app for macOS",
   "private": true,
@@ -18,8 +18,8 @@
     ]
   },
   "build": {
-    "appId": "com.carolineartz.snappy",
-    "productName": "Snappy",
+    "appId": "com.carolineartz.snap",
+    "productName": "Snap",
     "directories": {
       "output": "dist"
     },
@@ -30,15 +30,15 @@
     ],
     "extraResources": [
       {
-        "from": "build-native/snappy-vision",
-        "to": "snappy-vision"
+        "from": "build-native/snap-vision",
+        "to": "snap-vision"
       },
       {
         "from": "native/models",
         "to": "models"
       },
       {
-        "from": "native/snappy-vision/Resources",
+        "from": "native/snap-vision/Resources",
         "to": "clip-resources"
       }
     ],
@@ -47,6 +47,7 @@
     ],
     "mac": {
       "category": "public.app-category.productivity",
+      "icon": "assets/icon.icns",
       "target": [
         {
           "target": "dmg",
@@ -67,7 +68,7 @@
     "postinstall": "electron-rebuild -f",
     "dev": "pnpm models:ensure && pnpm build:native && vite",
     "build": "pnpm models:ensure && pnpm build:native && vite build",
-    "build:native": "mkdir -p build-native && DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swiftc -O -o build-native/snappy-vision native/snappy-vision/main.swift native/snappy-vision/CLIPTokenizer.swift native/snappy-vision/GPT2ByteEncoder.swift native/snappy-vision/Utils.swift",
+    "build:native": "mkdir -p build-native && DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swiftc -O -o build-native/snap-vision native/snap-vision/main.swift native/snap-vision/CLIPTokenizer.swift native/snap-vision/GPT2ByteEncoder.swift native/snap-vision/Utils.swift",
     "models:ensure": "test -f native/models/mobileclip_s1_image.mlpackage/Data/com.apple.CoreML/weights/weight.bin || bash scripts/download-models.sh",
     "models:download": "bash scripts/download-models.sh",
     "test": "vitest --coverage --run",

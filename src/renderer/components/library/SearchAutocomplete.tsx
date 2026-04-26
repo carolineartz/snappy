@@ -83,7 +83,7 @@ function AppIconSmall({ appName }: { appName: string }) {
   useEffect(() => {
     cancelledRef.current = false;
     if (appName && appName !== 'Other') {
-      window.snappy.library.getAppIcon(appName).then((src) => {
+      window.snap.library.getAppIcon(appName).then((src) => {
         if (!cancelledRef.current) setIconSrc(src);
       });
     }

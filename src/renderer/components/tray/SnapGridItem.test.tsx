@@ -39,13 +39,13 @@ describe('SnapGridItem', () => {
 
     const img = await waitForThumbnail(container);
     expect(img).toHaveAttribute('src', 'data:image/png;base64,thumb');
-    expect(window.snappy.library.readThumbnail).toHaveBeenCalledWith(
+    expect(window.snap.library.readThumbnail).toHaveBeenCalledWith(
       '/path/to/thumb.png',
     );
   });
 
   it('shows placeholder before thumbnail loads', () => {
-    vi.mocked(window.snappy.library.readThumbnail).mockReturnValueOnce(
+    vi.mocked(window.snap.library.readThumbnail).mockReturnValueOnce(
       new Promise(() => {}),
     );
 

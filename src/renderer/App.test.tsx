@@ -33,7 +33,7 @@ async function waitForThumbnail(container: HTMLElement) {
 describe('App', () => {
   it('renders the header', () => {
     render(<App />);
-    expect(screen.getByText('Snappy')).toBeInTheDocument();
+    expect(screen.getByText('Snap')).toBeInTheDocument();
   });
 
   it('shows empty state when no snaps', async () => {
@@ -45,7 +45,7 @@ describe('App', () => {
   });
 
   it('shows snap count as singular when 1 snap', async () => {
-    vi.mocked(window.snappy.library.getSnaps).mockResolvedValueOnce([
+    vi.mocked(window.snap.library.getSnaps).mockResolvedValueOnce([
       makeSnap(),
     ]);
     render(<App />);
@@ -53,7 +53,7 @@ describe('App', () => {
   });
 
   it('shows pluralized snap count when multiple snaps', async () => {
-    vi.mocked(window.snappy.library.getSnaps).mockResolvedValueOnce([
+    vi.mocked(window.snap.library.getSnaps).mockResolvedValueOnce([
       makeSnap({ id: 'snap-1' }),
       makeSnap({ id: 'snap-2' }),
     ]);
@@ -62,7 +62,7 @@ describe('App', () => {
   });
 
   it('renders the snap grid when snaps exist', async () => {
-    vi.mocked(window.snappy.library.getSnaps).mockResolvedValueOnce([
+    vi.mocked(window.snap.library.getSnaps).mockResolvedValueOnce([
       makeSnap(),
     ]);
     render(<App />);
@@ -73,14 +73,14 @@ describe('App', () => {
 
   it('registers onSnapsUpdated listener on mount', () => {
     render(<App />);
-    expect(window.snappy.library.onSnapsUpdated).toHaveBeenCalledWith(
+    expect(window.snap.library.onSnapsUpdated).toHaveBeenCalledWith(
       expect.any(Function),
     );
   });
 
   it('opens a snap and reloads the list', async () => {
     const snaps = [makeSnap()];
-    vi.mocked(window.snappy.library.getSnaps)
+    vi.mocked(window.snap.library.getSnaps)
       .mockResolvedValueOnce(snaps)
       .mockResolvedValueOnce(snaps);
 
@@ -92,13 +92,13 @@ describe('App', () => {
     await user.dblClick(gridItem);
 
     await waitFor(() => {
-      expect(window.snappy.library.openSnap).toHaveBeenCalledWith('snap-1');
+      expect(window.snap.library.openSnap).toHaveBeenCalledWith('snap-1');
     });
   });
 
   it('deletes a snap and reloads the list', async () => {
     const snaps = [makeSnap()];
-    vi.mocked(window.snappy.library.getSnaps)
+    vi.mocked(window.snap.library.getSnaps)
       .mockResolvedValueOnce(snaps)
       .mockResolvedValueOnce([]);
 
@@ -110,7 +110,7 @@ describe('App', () => {
     await user.pointer({ keys: '[MouseRight]', target: gridItem });
 
     await waitFor(() => {
-      expect(window.snappy.library.deleteSnap).toHaveBeenCalledWith('snap-1');
+      expect(window.snap.library.deleteSnap).toHaveBeenCalledWith('snap-1');
     });
   });
 });

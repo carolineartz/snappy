@@ -26,12 +26,12 @@ export function MenuApp() {
     setState(initial);
 
     // Dismiss on blur (click outside)
-    const onBlur = () => window.snappy.menu.dismiss();
+    const onBlur = () => window.snap.menu.dismiss();
     window.addEventListener('blur', onBlur);
 
     // Dismiss on Escape
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') window.snappy.menu.dismiss();
+      if (e.key === 'Escape') window.snap.menu.dismiss();
     };
     window.addEventListener('keydown', onKey);
 
@@ -58,26 +58,26 @@ export function MenuApp() {
         hasAnnotations={state.hasAnnotations}
         onSetTool={(tool) => {
           update({ activeTool: tool });
-          window.snappy.menu.action('setTool', tool);
+          window.snap.menu.action('setTool', tool);
         }}
         onSetColor={(color) => {
           update({ activeColor: color });
-          window.snappy.menu.action('setColor', color);
+          window.snap.menu.action('setColor', color);
         }}
         onSetStroke={(width) => {
           update({ activeStrokeWidth: width });
-          window.snappy.menu.action('setStroke', width);
+          window.snap.menu.action('setStroke', width);
         }}
-        onCopy={() => window.snappy.menu.action('copy')}
+        onCopy={() => window.snap.menu.action('copy')}
         onToggleShadow={() => {
           update({ hasShadow: !state.hasShadow });
-          window.snappy.menu.action('toggleShadow');
+          window.snap.menu.action('toggleShadow');
         }}
-        onClose={() => window.snappy.menu.action('close')}
-        onDelete={() => window.snappy.menu.action('delete')}
-        onDuplicate={() => window.snappy.menu.action('duplicate')}
-        onRevert={() => window.snappy.menu.action('revert')}
-        onDismiss={() => window.snappy.menu.dismiss()}
+        onClose={() => window.snap.menu.action('close')}
+        onDelete={() => window.snap.menu.action('delete')}
+        onDuplicate={() => window.snap.menu.action('duplicate')}
+        onRevert={() => window.snap.menu.action('revert')}
+        onDismiss={() => window.snap.menu.dismiss()}
       />
     </div>
   );

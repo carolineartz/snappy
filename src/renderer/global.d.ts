@@ -1,7 +1,7 @@
-import type { SnappyAPI } from '../preload/index';
+import type { SnapAPI } from '../preload/index';
 
 declare global {
   interface Window {
-    snappy: SnappyAPI;
+    snap: SnapAPI;
   }
 }

@@ -2,7 +2,7 @@ import '@testing-library/jest-dom';
 import { beforeEach } from 'vitest';
 
 beforeEach(() => {
-  Object.defineProperty(window, 'snappy', {
+  Object.defineProperty(window, 'snap', {
     value: {
       app: {
         quit: vi.fn(),

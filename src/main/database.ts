@@ -38,7 +38,7 @@ export interface SnapRecord {
 }
 
 export function initDatabase(): void {
-  const dbPath = path.join(app.getPath('userData'), 'snappy.db');
+  const dbPath = path.join(app.getPath('userData'), 'snap.db');
   db = new Database(dbPath);
 
   db.pragma('journal_mode = WAL');

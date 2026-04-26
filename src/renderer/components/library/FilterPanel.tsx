@@ -31,7 +31,7 @@ function AppIcon({ appName }: { appName: string }) {
 
   useEffect(() => {
     if (appName && appName !== 'Other') {
-      window.snappy.library.getAppIcon(appName).then(setIconSrc);
+      window.snap.library.getAppIcon(appName).then(setIconSrc);
     }
   }, [appName]);
 

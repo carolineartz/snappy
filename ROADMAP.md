@@ -1,4 +1,4 @@
-# Snappy Roadmap
+# Snap Roadmap
 
 Personal utility — priorities are whatever feels most useful, not what makes sense for a product.
 
@@ -79,6 +79,6 @@ A preferences window (or panel) for configuring default behavior and shortcuts.
 
 ## Explicitly out of scope
 
-- Sharing features (SnappyLink, social integrations) — not useful for personal workflow
+- Sharing features (SnapLink, social integrations) — not useful for personal workflow
 - Windows/Linux support — personal macOS-only app
 - iCloud sync — original had it; not needed yet
