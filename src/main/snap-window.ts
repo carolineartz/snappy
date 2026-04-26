@@ -5,7 +5,7 @@ import type { CaptureResult } from './capture';
 import type { SnapRecord } from './database';
 import { updateSnap } from './database';
 
-const isDev = !!process.env.VITE_DEV_SERVER_URL;
+const isDev = !!process.env.ELECTRON_RENDERER_URL;
 
 // Map window ID → snap ID for state persistence
 const snapWindows = new Map<number, { win: BrowserWindow; snapId: string }>();
@@ -100,8 +100,10 @@ function createWindow(
 
   const params = new URLSearchParams({ filePath, snapId });
 
-  if (isDev && process.env.VITE_DEV_SERVER_URL) {
-    win.loadURL(`${process.env.VITE_DEV_SERVER_URL}snap/index.html?${params}`);
+  if (isDev && process.env.ELECTRON_RENDERER_URL) {
+    win.loadURL(
+      `${process.env.ELECTRON_RENDERER_URL}/snap/index.html?${params}`,
+    );
   } else {
     win.loadFile(path.join(__dirname, 'snap', 'index.html'), {
       search: params.toString(),

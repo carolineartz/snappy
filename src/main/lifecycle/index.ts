@@ -1,5 +1,5 @@
 export {
-  createMenubar,
+  createTrayApp,
   getNotifyTrayUpdated,
   registerGlobalShortcut,
 } from './tray';

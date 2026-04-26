@@ -1,9 +1,8 @@
-import { app, ipcMain } from 'electron';
-import type { Menubar } from 'menubar';
+import { app, type BrowserWindow, ipcMain } from 'electron';
 import { EVENTS } from '../../shared/events';
 
-export function registerAppHandlers(mb: Menubar): void {
+export function registerAppHandlers(win: BrowserWindow): void {
   ipcMain.handle(EVENTS.APP_VERSION, () => app.getVersion());
   ipcMain.on(EVENTS.APP_QUIT, () => app.quit());
-  ipcMain.on(EVENTS.WINDOW_HIDE, () => mb.hideWindow());
+  ipcMain.on(EVENTS.WINDOW_HIDE, () => win.hide());
 }

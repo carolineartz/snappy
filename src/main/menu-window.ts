@@ -2,7 +2,7 @@ import path from 'node:path';
 import { BrowserWindow } from 'electron';
 import log from 'electron-log';
 
-const isDev = !!process.env.VITE_DEV_SERVER_URL;
+const isDev = !!process.env.ELECTRON_RENDERER_URL;
 
 let menuWindow: BrowserWindow | null = null;
 // Maps menu window → parent snap window for action forwarding
@@ -60,9 +60,9 @@ export function openMenuWindow(params: MenuOpenParams): BrowserWindow {
     hasAnnotations: params.hasAnnotations ? '1' : '0',
   });
 
-  if (isDev && process.env.VITE_DEV_SERVER_URL) {
+  if (isDev && process.env.ELECTRON_RENDERER_URL) {
     win.loadURL(
-      `${process.env.VITE_DEV_SERVER_URL}menu/index.html?${queryParams}`,
+      `${process.env.ELECTRON_RENDERER_URL}/menu/index.html?${queryParams}`,
     );
   } else {
     win.loadFile(path.join(__dirname, 'menu', 'index.html'), {

@@ -1,7 +1,6 @@
 import path from 'node:path';
-import { app, BrowserWindow, globalShortcut } from 'electron';
+import { app, BrowserWindow, globalShortcut, Tray } from 'electron';
 import log from 'electron-log';
-import { menubar } from 'menubar';
 import {
   APP_NAME,
   CAPTURE_SHORTCUT,
@@ -22,7 +21,7 @@ import {
 } from '../snap-window';
 import { runVisionForSnap } from '../vision';
 
-const isDev = !!process.env.VITE_DEV_SERVER_URL;
+const isDev = !!process.env.ELECTRON_RENDERER_URL;
 
 let notifyTrayUpdated: () => void = () => {};
 
@@ -87,38 +86,68 @@ export function registerGlobalShortcut(): void {
   }
 }
 
-export function createMenubar(): void {
+export function createTrayApp(): void {
   const icon = createTrayIcon();
 
-  const mb = menubar({
-    icon,
-    tooltip: APP_NAME,
-    preloadWindow: true,
-    browserWindow: {
-      ...WINDOW_CONFIG,
-      show: false,
-      skipTaskbar: true,
-      alwaysOnTop: true,
-      webPreferences: {
-        contextIsolation: true,
-        nodeIntegration: false,
-        preload: path.join(__dirname, 'preload.js'),
-      },
+  const tray = new Tray(icon);
+  tray.setToolTip(APP_NAME);
+
+  const win = new BrowserWindow({
+    ...WINDOW_CONFIG,
+    show: false,
+    frame: false,
+    fullscreenable: false,
+    resizable: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      preload: path.join(__dirname, 'preload.js'),
     },
-    index: isDev
-      ? process.env.VITE_DEV_SERVER_URL
-      : `file://${path.join(__dirname, 'index.html')}`,
   });
 
-  mb.on('ready', () => {
-    log.info(`${APP_NAME} is ready`);
-    app.dock?.hide();
-    registerGlobalShortcut();
-  });
+  // Position the window centered horizontally below the tray icon.
+  function positionWindowUnderTray(): void {
+    const trayBounds = tray.getBounds();
+    const winBounds = win.getBounds();
+    const x = Math.round(
+      trayBounds.x + trayBounds.width / 2 - winBounds.width / 2,
+    );
+    const y = Math.round(trayBounds.y + trayBounds.height + 4);
+    win.setPosition(x, y, false);
+  }
 
-  // Tray refresh
+  function showWindow(): void {
+    positionWindowUnderTray();
+    win.show();
+    win.focus();
+    notifyTrayUpdated();
+  }
+
+  function toggleWindow(): void {
+    if (win.isVisible()) {
+      win.hide();
+    } else {
+      showWindow();
+    }
+  }
+
+  tray.on('click', toggleWindow);
+  tray.on('right-click', toggleWindow);
+
+  if (isDev && process.env.ELECTRON_RENDERER_URL) {
+    win.loadURL(`${process.env.ELECTRON_RENDERER_URL}/index.html`);
+  } else {
+    win.loadFile(path.join(__dirname, 'index.html'));
+  }
+
+  log.info(`${APP_NAME} is ready`);
+  app.dock?.hide();
+  registerGlobalShortcut();
+
   notifyTrayUpdated = () => {
-    mb.window?.webContents.send(EVENTS.SNAPS_UPDATED);
+    win.webContents.send(EVENTS.SNAPS_UPDATED);
     notifyBrowserUpdated();
   };
 
@@ -127,34 +156,31 @@ export function createMenubar(): void {
   // Custom tray hide logic — tray stays open when interacting with
   // floating snaps or the annotation menu, but CLOSES when focus goes
   // to the library browser window (or anything outside the app).
-  function isSnapWindow(win: BrowserWindow | null): boolean {
-    if (!win) return false;
-    if (win.id === mb.window?.id) return true;
-    if (win.id === getMenuWindow()?.id) return true;
+  function isSnapWindow(focused: BrowserWindow | null): boolean {
+    if (!focused) return false;
+    if (focused.id === win.id) return true;
+    if (focused.id === getMenuWindow()?.id) return true;
     return Array.from(getSnapWindows().values()).some(
-      (entry) => entry.win.id === win.id,
+      (entry) => entry.win.id === focused.id,
     );
   }
 
   function hideTrayIfFocusLeft(): void {
     setTimeout(() => {
       const focused = BrowserWindow.getFocusedWindow();
-      if (!isSnapWindow(focused) && mb.window?.isVisible()) {
-        mb.hideWindow();
+      if (!isSnapWindow(focused) && win.isVisible()) {
+        win.hide();
       }
     }, 50);
   }
 
-  mb.on('focus-lost', hideTrayIfFocusLeft);
+  win.on('blur', hideTrayIfFocusLeft);
 
   app.on('browser-window-blur', () => {
-    if (mb.window?.isVisible()) {
+    if (win.isVisible()) {
       hideTrayIfFocusLeft();
     }
   });
 
-  mb.on('after-show', notifyTrayUpdated);
-
-  // Register all IPC handlers, passing the notifyTrayUpdated callback
-  registerAllHandlers(mb, notifyTrayUpdated);
+  registerAllHandlers(win, notifyTrayUpdated);
 }

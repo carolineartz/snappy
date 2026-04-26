@@ -4,7 +4,7 @@ import log from 'electron-log';
 import { BROWSER_WINDOW_CONFIG } from '../shared/constants';
 import { EVENTS } from '../shared/events';
 
-const isDev = !!process.env.VITE_DEV_SERVER_URL;
+const isDev = !!process.env.ELECTRON_RENDERER_URL;
 
 let browserWindow: BrowserWindow | null = null;
 
@@ -52,8 +52,8 @@ export function openBrowserWindow(): BrowserWindow {
     },
   });
 
-  if (isDev && process.env.VITE_DEV_SERVER_URL) {
-    win.loadURL(`${process.env.VITE_DEV_SERVER_URL}library/index.html`);
+  if (isDev && process.env.ELECTRON_RENDERER_URL) {
+    win.loadURL(`${process.env.ELECTRON_RENDERER_URL}/library/index.html`);
   } else {
     win.loadFile(path.join(__dirname, 'library', 'index.html'));
   }
